@@ -53,6 +53,9 @@ func (s *Server) processIncomingPackets(buffer []byte) error {
 	data := make([]byte, n)
 	copy(data, buffer[:n])
 
+	// メトリクス: 受信パケットを記録
+	s.recordReceivedPacket()
+
 	receivedPacket := model.ReceivedData{
 		Data: data,
 		Addr: receivedAddr,

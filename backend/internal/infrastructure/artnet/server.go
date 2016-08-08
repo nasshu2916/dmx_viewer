@@ -28,6 +28,11 @@ type Server struct {
 	channelBufferSize  int                     // チャネルのバッファサイズ
 	droppedPackets     int64                   // ドロップされたパケット数
 	droppedSendPackets int64                   // ドロップされた送信パケット数
+
+	// 受信メトリクス
+	packetsReceivedTotal     int64     // 総受信パケット数
+	packetsReceivedBuckets   [60]int64 // 各秒の受信パケット数（リングバッファ）
+	packetsReceivedBucketSec [60]int64 // 各バケットが表すUNIX秒
 }
 
 func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {

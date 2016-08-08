@@ -37,6 +37,7 @@ func (s *Server) logChannelStatistics() {
 	sendStatus := DetermineHealthStatus(sendUtil, droppedSendPackets)
 	LogChannelStats(s.logger, SendChannel, sendQueueLength, bufferSize, droppedSendPackets, sendStatus)
 } // GetChannelStats チャネルの統計情報を取得
+
 func (s *Server) GetChannelStats() (bufferSize int, receiveQueueLength int, sendQueueLength int, droppedReceivePackets int64, droppedSendPackets int64) {
 	return s.channelBufferSize, len(s.receivedChan), len(s.sendChan), atomic.LoadInt64(&s.droppedPackets), atomic.LoadInt64(&s.droppedSendPackets)
 }
@@ -86,3 +87,48 @@ func (s *Server) GetChannelUtilization() (receiveUtil float64, sendUtil float64)
 	sendUtil = float64(sendQueueLength) / float64(s.channelBufferSize) * 100
 	return
 }
+
+// 受信パケット数（トータル）と直近1分の集計を管理するためのフィールドと関数群
+
+// recordPacketAt は指定時刻の受信を1件記録する
+func (s *Server) recordPacketAt(now time.Time) {
+	// 総受信数をインクリメント
+	atomic.AddInt64(&s.packetsReceivedTotal, 1)
+
+	// 秒単位のリングバッファ（60秒）にインクリメント
+	sec := now.Unix()
+	idx := sec % 60
+	// バケットの時刻が異なる場合はリセットして現在秒に合わせる
+	prevSec := atomic.LoadInt64(&s.packetsReceivedBucketSec[idx])
+	if prevSec != sec {
+		// 他ゴルーチンとの競合を考慮してCASで時刻を更新し、成功した場合のみリセット
+		if atomic.CompareAndSwapInt64(&s.packetsReceivedBucketSec[idx], prevSec, sec) {
+			atomic.StoreInt64(&s.packetsReceivedBuckets[idx], 0)
+		}
+	}
+	atomic.AddInt64(&s.packetsReceivedBuckets[idx], 1)
+}
+
+// recordReceivedPacket は現在時刻で1件の受信を記録する
+func (s *Server) recordReceivedPacket() { s.recordPacketAt(time.Now()) }
+
+// GetReceivedPacketsTotal は起動以降の総受信パケット数を返す
+func (s *Server) GetReceivedPacketsTotal() int64 {
+	return atomic.LoadInt64(&s.packetsReceivedTotal)
+}
+
+// GetReceivedPacketsLastMinute は直近60秒間に受信したパケット数を返す
+func (s *Server) GetReceivedPacketsLastMinute() int64 {
+	nowSec := time.Now().Unix()
+	var sum int64 = 0
+	for i := int64(0); i < 60; i++ {
+		sec := atomic.LoadInt64(&s.packetsReceivedBucketSec[i])
+		if nowSec-sec < 60 {
+			sum += atomic.LoadInt64(&s.packetsReceivedBuckets[i])
+		}
+	}
+	return sum
+}
+
+// RecordPacketAtForTest テスト用ヘルパー（他パッケージのテストから呼べるよう公開）
+func (s *Server) RecordPacketAtForTest(t time.Time) { s.recordPacketAt(t) }
