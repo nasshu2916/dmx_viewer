@@ -1,0 +1,11 @@
+# env file
+.env
+
+# Editor/IDE
+# .idea/
+# .vscode/
+
+tmp/
+bin/
+build/
+backend/**/embed_static/
