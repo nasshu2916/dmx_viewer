@@ -1,0 +1,16 @@
+node_modules
+dist
+.DS_Store
+*.local
+*.log
+*.cache
+.vscode
+.idea
+coverage
+.nyc_output
+.nuxt
+.next
+.cache
+.parcel-cache
+.tmp
+.temp

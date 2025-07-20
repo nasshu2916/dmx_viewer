@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: theme('colors.dmx-dark-bg');
+  color: theme('colors.dmx-text-light');
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.App {
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  background-color: theme('colors.dmx-medium-bg');
+  padding: 1rem;
+  color: theme('colors.dmx-text-light');
+  border-bottom: 1px solid theme('colors.dmx-border');
+}
+
+.App-main-content {
+  flex-grow: 1;
+  padding: 1rem;
+}
