@@ -10,6 +10,7 @@ import (
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/handler/websocket"
+	"github.com/nasshu2916/dmx_viewer/pkg/httpserver"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
@@ -40,7 +41,8 @@ func Run(config *config.Config) {
 	router.Handle("/ws", http.HandlerFunc(wsHandler.ServeWS))
 
 	logger.Info(fmt.Sprintf("Server started on :%s", config.App.Port))
-	if err = http.ListenAndServe(":"+config.App.Port, router); err != nil {
+	server := httpserver.New(router, httpserver.Port(config.App.Port))
+	if err = <-server.Notify(); err != nil {
 		logger.Fatal("ListenAndServe: ", err)
 	}
 }
