@@ -13,6 +13,7 @@ type Client struct {
 	conn   *websocket.Conn
 	logger *logger.Logger
 	send   chan []byte
+	topics map[SubscribeTopic]struct{}
 }
 
 const (
@@ -24,17 +25,21 @@ const (
 )
 
 func NewClient(hub *Hub, conn *websocket.Conn, logger *logger.Logger) *Client {
+	topics := make(map[SubscribeTopic]struct{})
+	topics["default"] = struct{}{}
+
 	return &Client{
 		hub:    hub,
 		conn:   conn,
 		logger: logger,
 		send:   make(chan []byte, 256),
+		topics: topics,
 	}
 }
 
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.UnregisterClient(c)
+		c.hub.LeaveClient(c)
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -89,6 +94,7 @@ func (c *Client) SubscribeToTopic(topic SubscribeTopic) {
 		client: c,
 		topic:  topic,
 	}
+	c.topics[topic] = struct{}{}
 }
 
 func (c *Client) UnsubscribeFromTopic(topic SubscribeTopic) {
@@ -96,8 +102,5 @@ func (c *Client) UnsubscribeFromTopic(topic SubscribeTopic) {
 		client: c,
 		topic:  topic,
 	}
-}
-
-func (c *Client) GetSubscribedTopics() []SubscribeTopic {
-	return c.hub.GetSubscribedTopics(c)
+	delete(c.topics, topic)
 }

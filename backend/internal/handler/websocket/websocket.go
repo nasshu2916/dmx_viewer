@@ -36,7 +36,7 @@ func (h *WebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := NewClient(h.hub, conn, h.logger)
-	client.SubscribeToTopic("default")
+	h.hub.JoinClient(client)
 
 	go client.writePump()
 	go client.readPump()
