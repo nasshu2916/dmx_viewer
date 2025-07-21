@@ -11,8 +11,8 @@ import (
 type Client struct {
 	hub    *Hub
 	conn   *websocket.Conn
-	send   chan []byte
 	logger *logger.Logger
+	send   chan []byte
 }
 
 const (
@@ -22,6 +22,15 @@ const (
 
 	maxMessageSize = 512
 )
+
+func NewClient(hub *Hub, conn *websocket.Conn, logger *logger.Logger) *Client {
+	return &Client{
+		hub:    hub,
+		conn:   conn,
+		logger: logger,
+		send:   make(chan []byte, 256),
+	}
+}
 
 func (c *Client) readPump() {
 	defer func() {
@@ -44,9 +53,7 @@ func (c *Client) readPump() {
 			break
 		}
 		c.logger.Info("Received message from client", "message", message)
-		// TODO: 受信したメッセージに応じた処理を実装する
-		// 現状は受信したメッセージをそのままブロードキャストする
-		c.hub.BroadcastMessage(message)
+		c.hub.BroadcastMessage("default", message)
 	}
 }
 
@@ -75,4 +82,22 @@ func (c *Client) writePump() {
 			}
 		}
 	}
+}
+
+func (c *Client) SubscribeToTopic(topic SubscribeTopic) {
+	c.hub.subscribe <- SubscribeRequest{
+		client: c,
+		topic:  topic,
+	}
+}
+
+func (c *Client) UnsubscribeFromTopic(topic SubscribeTopic) {
+	c.hub.unsubscribe <- SubscribeRequest{
+		client: c,
+		topic:  topic,
+	}
+}
+
+func (c *Client) GetSubscribedTopics() []SubscribeTopic {
+	return c.hub.GetSubscribedTopics(c)
 }
