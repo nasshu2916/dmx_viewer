@@ -32,5 +32,5 @@ func main() {
 		cancel()
 	}()
 
-	app.Run(ctx, cfg, *appLogger)
+	app.Run(ctx, cfg, appLogger)
 }

@@ -22,7 +22,7 @@ var indexHtml []byte
 //go:embed "embed_static/assets/*"
 var assetsFS embed.FS
 
-func Run(ctx context.Context, config *config.Config, logger logger.Logger) {
+func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	var err error
 
 	timeHandler, err := di.InitializeTimeHandler(logger)

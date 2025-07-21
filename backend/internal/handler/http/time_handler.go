@@ -19,7 +19,7 @@ func NewTimeHandler(timeUseCase usecase.TimeUseCase) *TimeHandler {
 	}
 }
 
-// NTP時刻同期を開始
+// StartTimeSync starts NTP time synchronization
 func (h *TimeHandler) StartTimeSync(ctx context.Context) {
 	go h.timeUseCase.StartTimeSync(ctx)
 }

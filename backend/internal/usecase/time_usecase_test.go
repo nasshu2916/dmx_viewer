@@ -38,8 +38,8 @@ func TestGetCurrentTime(t *testing.T) {
 	// Set up the mock
 	mockRepo.On("GetTime").Return(testTime)
 
-	cfg := &config.Config{}           // Not used in GetCurrentTime
-	log := *logger.NewLogger("fatal") // Use NewLogger with a level that suppresses output
+	cfg := &config.Config{}          // Not used in GetCurrentTime
+	log := logger.NewLogger("fatal") // Use NewLogger with a level that suppresses output
 	uc := NewTimeUseCaseImpl(mockRepo, cfg, log)
 
 	// Execute the method
@@ -57,7 +57,7 @@ func TestStartTimeSync_NTPDisabled(t *testing.T) {
 			Enabled: false,
 		},
 	}
-	log := *logger.NewLogger("fatal") // Use NewLogger with a level that suppresses output
+	log := logger.NewLogger("fatal") // Use NewLogger with a level that suppresses output
 	uc := NewTimeUseCaseImpl(mockRepo, cfg, log)
 
 	// StartTimeSync should return immediately if NTP is disabled

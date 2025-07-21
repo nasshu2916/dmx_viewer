@@ -17,7 +17,7 @@ type TimeUseCase interface {
 }
 
 type TimeUseCaseImpl struct {
-	logger         logger.Logger
+	logger         *logger.Logger
 	timeRepository repository.TimeRepository
 	ntpEnabled     bool
 	ntpServer      string
@@ -25,7 +25,7 @@ type TimeUseCaseImpl struct {
 	retryCount     int
 }
 
-func NewTimeUseCaseImpl(timeRepository repository.TimeRepository, cfg *config.Config, logger logger.Logger) *TimeUseCaseImpl {
+func NewTimeUseCaseImpl(timeRepository repository.TimeRepository, cfg *config.Config, logger *logger.Logger) *TimeUseCaseImpl {
 	return &TimeUseCaseImpl{
 		logger:         logger,
 		timeRepository: timeRepository,
