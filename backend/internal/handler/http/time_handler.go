@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -9,18 +10,23 @@ import (
 )
 
 type TimeHandler struct {
-	TimeUseCase usecase.TimeUseCase
+	timeUseCase usecase.TimeUseCase
 }
 
 func NewTimeHandler(timeUseCase usecase.TimeUseCase) *TimeHandler {
 	return &TimeHandler{
-		TimeUseCase: timeUseCase,
+		timeUseCase: timeUseCase,
 	}
+}
+
+// NTP時刻同期を開始
+func (h *TimeHandler) StartTimeSync(ctx context.Context) {
+	go h.timeUseCase.StartTimeSync(ctx)
 }
 
 func (h *TimeHandler) GetTime(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"datetime": h.TimeUseCase.GetCurrentTime().Format(time.RFC3339),
+		"datetime": h.timeUseCase.GetCurrentTime().Format(time.RFC3339),
 	})
 }

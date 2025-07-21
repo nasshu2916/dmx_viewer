@@ -31,7 +31,7 @@ func Run(ctx context.Context, config *config.Config, logger logger.Logger) {
 	}
 
 	// NTP時刻同期を開始
-	go timeHandler.TimeUseCase.StartTimeSync(ctx)
+	go timeHandler.StartTimeSync(ctx)
 
 	router := chi.NewRouter()
 	wsHandler := websocket.NewWebSocketHandler(&logger)
