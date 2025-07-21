@@ -19,6 +19,11 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: generate
+generate: ## Generate files
+	@echo "Generating files..."
+	cd $(BACKEND_DIR) && wire internal/di/wire.go
+
 # Test targets
 .PHONY: test ## Run all tests
 test: test-frontend test-backend

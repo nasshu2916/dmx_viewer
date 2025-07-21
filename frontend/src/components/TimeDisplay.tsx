@@ -24,9 +24,9 @@ const TimeDisplay: React.FC = () => {
   }
 
   const fetchServerTime = async () => {
-    const res = await fetch('/api/ntp_time')
+    const res = await fetch('/api/time')
     if (!res.ok) {
-      console.warn('NTPサーバから時刻を取得できませんでした')
+      console.warn('サーバから時刻を取得できませんでした')
       return
     }
     const data = await res.json()

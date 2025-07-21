@@ -1,18 +1,36 @@
 package main
 
 import (
-	"log"
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nasshu2916/dmx_viewer/internal/app"
 	"github.com/nasshu2916/dmx_viewer/internal/config"
+	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
 func main() {
-	config, err := config.NewConfig()
+	cfg, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		logger.NewLogger("error").Fatal("Failed to load configuration: ", err)
 		return
 	}
 
-	app.Run(config)
+	appLogger := logger.NewLogger(cfg.App.LogLevel)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigCh
+		appLogger.Info("Shutting down...")
+		cancel()
+	}()
+
+	app.Run(ctx, cfg, *appLogger)
 }

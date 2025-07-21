@@ -10,6 +10,7 @@ type (
 	Config struct {
 		App    App
 		ArtNet ArtNet
+		NTP    NTP
 	}
 
 	App struct {
@@ -19,6 +20,13 @@ type (
 
 	ArtNet struct {
 		LogLevel string `env:"ARTNET_LOG_LEVEL" envDefault:"info"`
+	}
+
+	NTP struct {
+		Enabled               bool   `env:"NTP_ENABLED" envDefault:"true"`
+		Server                string `env:"NTP_SERVER" envDefault:"pool.ntp.org"`
+		UpdateIntervalMinutes int    `env:"NTP_UPDATE_INTERVAL_MINUTES" envDefault:"360"`
+		RetryCount            int    `env:"NTP_RETRY_COUNT" envDefault:"3"`
 	}
 )
 
