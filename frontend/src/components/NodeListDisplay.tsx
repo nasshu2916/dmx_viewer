@@ -1,10 +1,11 @@
 import React from 'react'
-import useArtNetWebSocket from '../hooks/useArtNetWebSocket'
 import type { ArtNet } from '@/types/artnet'
 
-const NodeListDisplay: React.FC = () => {
-  const { artNetNodes } = useArtNetWebSocket()
+interface NodeListDisplayProps {
+  artNetNodes: ArtNet.ArtNetNode[]
+}
 
+const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ artNetNodes }) => {
   return (
     <div className="p-4">
       <h2 className="mb-4 text-xl font-bold">ArtNet Nodes</h2>

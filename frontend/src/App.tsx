@@ -8,7 +8,7 @@ import NodeListDisplay from './components/NodeListDisplay'
 import useArtNetWebSocket from './hooks/useArtNetWebSocket'
 
 function App() {
-  const { dmxData, isConnected, serverMessages } = useArtNetWebSocket()
+  const { dmxData, isConnected, serverMessages, artNetNodes } = useArtNetWebSocket()
   const [selectedUniverse, setSelectedUniverse] = useState<number | undefined>(undefined)
 
   const availableUniverses = Object.keys(dmxData).map(Number).sort()
@@ -28,7 +28,7 @@ function App() {
       </header>
       <main className="App-main-content flex flex-1 space-x-4 p-4">
         <div className="w-1/4 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <NodeListDisplay />
+          <NodeListDisplay artNetNodes={artNetNodes} />
           <UniverseSelector availableUniverses={availableUniverses} onSelectUniverses={handleUniverseSelection} />
         </div>
         <div className="flex-1 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
