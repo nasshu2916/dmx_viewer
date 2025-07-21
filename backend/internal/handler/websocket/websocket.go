@@ -9,10 +9,11 @@ import (
 
 type WebSocketHandler struct {
 	upgrader websocket.Upgrader
+	hub      *Hub
 	logger   *logger.Logger
 }
 
-func NewWebSocketHandler(logger *logger.Logger) *WebSocketHandler {
+func NewWebSocketHandler(hub *Hub, logger *logger.Logger) *WebSocketHandler {
 	return &WebSocketHandler{
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -22,6 +23,7 @@ func NewWebSocketHandler(logger *logger.Logger) *WebSocketHandler {
 				return true
 			},
 		},
+		hub:    hub,
 		logger: logger,
 	}
 }
@@ -32,23 +34,14 @@ func (h *WebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error("Failed to upgrade WebSocket connection: %v", err)
 		return
 	}
-	defer conn.Close()
 
-	h.logger.Info("WebSocket connection established.")
+	client := &Client{hub: h.hub, conn: conn, send: make(chan []byte, 256), logger: h.logger}
+	client.hub.RegisterClient(client)
 
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			h.logger.Error("Failed to read WebSocket message: %v", err)
-			break
-		}
-		h.logger.Info("Received message: %s", message)
+	go client.writePump()
+	go client.readPump()
+}
 
-		// TODO: 受信したメッセージに応じた処理を実装する
-		err = conn.WriteMessage(websocket.TextMessage, message)
-		if err != nil {
-			h.logger.Error("Failed to write WebSocket message: %v", err)
-			break
-		}
-	}
+func (h *WebSocketHandler) Run() {
+	go h.hub.Run()
 }

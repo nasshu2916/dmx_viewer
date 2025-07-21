@@ -11,7 +11,6 @@ import (
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/di"
-	"github.com/nasshu2916/dmx_viewer/internal/handler/websocket"
 	"github.com/nasshu2916/dmx_viewer/pkg/httpserver"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -30,11 +29,18 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 		logger.Fatal("Failed to initialize time handler: ", err)
 	}
 
+	wsHandler, err := di.InitializeWebSocketHandler(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize WebSocket handler: ", err)
+	}
+
 	// NTP時刻同期を開始
 	go timeHandler.StartTimeSync(ctx)
 
+	// WebSocket Hubの実行を開始
+	go wsHandler.Run()
+
 	router := chi.NewRouter()
-	wsHandler := websocket.NewWebSocketHandler(&logger)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
