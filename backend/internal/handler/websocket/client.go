@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -14,6 +15,12 @@ type Client struct {
 	logger *logger.Logger
 	send   chan []byte
 	topics map[SubscribeTopic]struct{}
+}
+
+type WebSocketMessage struct {
+	Type    string          `json:"type"`    // Type of message
+	Topic   SubscribeTopic  `json:"topic"`   // Topic name
+	Payload json.RawMessage `json:"payload"` // Actual message payload for "publish" type
 }
 
 const (
@@ -57,8 +64,21 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		c.logger.Info("Received message from client", "message", message)
-		c.hub.BroadcastMessage("default", message)
+
+		var wsMsg WebSocketMessage
+		if err := json.Unmarshal(message, &wsMsg); err != nil {
+			c.logger.Debug("Failed to unmarshal WebSocket message", "error", err, "message", string(message))
+			continue
+		}
+
+		switch wsMsg.Type {
+		case "subscribe":
+			c.SubscribeToTopic(wsMsg.Topic)
+		case "unsubscribe":
+			c.UnsubscribeFromTopic(wsMsg.Topic)
+		default:
+			c.logger.Debug("Unknown WebSocket message type", "addr", c.conn.RemoteAddr(), "message", wsMsg)
+		}
 	}
 }
 

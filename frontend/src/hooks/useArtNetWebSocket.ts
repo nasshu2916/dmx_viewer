@@ -50,11 +50,12 @@ const useArtNetWebSocket = () => {
         logger.info('WebSocket connected')
         setIsConnected(true)
 
-        ws?.send(JSON.stringify({ topic: 'subscribe', data: { topic: 'artnet/packet' } }))
-        ws?.send(JSON.stringify({ topic: 'subscribe', data: { topic: 'server/message' } }))
-        ws?.send(JSON.stringify({ topic: 'subscribe', data: { topic: 'server/message_history' } }))
-        ws?.send(JSON.stringify({ topic: 'subscribe', data: { topic: 'artnet/nodes' } }))
-        ws?.send(JSON.stringify({ type: 'get_nodes' }))
+        ws?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/packet' }))
+        ws?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/dmx_packet' }))
+        ws?.send(JSON.stringify({ type: 'subscribe', topic: 'server/message' }))
+        ws?.send(JSON.stringify({ type: 'subscribe', topic: 'server/message_history' }))
+        ws?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/nodes' }))
+        // ws?.send(JSON.stringify({ type: 'get_nodes' }))
       }
 
       ws.onerror = error => {
