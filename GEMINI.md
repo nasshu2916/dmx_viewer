@@ -32,6 +32,7 @@
 - コードの重複を避け、DRY原則を遵守
 - ドキュメントは英語と日本語の両方で書き、日本語のドキュメントは `_ja` 接尾辞を付ける
 - log.Println や fmt.Println は使用せず、`github.com/nasshu2916/dmx_viewer/pkg/logger` パッケージを利用
+  - logger パッケージの関数は `msg string, fields ...interface{}` の形式で、`msg` にメッセージを、`fields` にキーと値のペアを渡す
 
 ## ワークフロー
 - 変更後は make lint でスタイルチェック

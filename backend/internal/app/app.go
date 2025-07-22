@@ -5,12 +5,12 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"net/http"
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/di"
 	httpHandler "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
 	"github.com/nasshu2916/dmx_viewer/internal/interface/router"
-	"github.com/nasshu2916/dmx_viewer/pkg/httpserver"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
@@ -43,8 +43,5 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	router := router.NewRouter(staticHandler, timeHandler, wsHandler)
 
 	logger.Info(fmt.Sprintf("Server started on :%s", config.App.Port))
-	server := httpserver.New(router, httpserver.Port(config.App.Port))
-	if err = <-server.Notify(); err != nil {
-		logger.Fatal("ListenAndServe: ", err)
-	}
+	http.ListenAndServe(fmt.Sprintf(":%s", config.App.Port), router)
 }
