@@ -5,12 +5,11 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"net/http"
-
-	"github.com/go-chi/chi"
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/di"
+	httpHandler "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
+	"github.com/nasshu2916/dmx_viewer/internal/interface/router"
 	"github.com/nasshu2916/dmx_viewer/pkg/httpserver"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -22,8 +21,6 @@ var indexHtml []byte
 var assetsFS embed.FS
 
 func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
-	var err error
-
 	timeHandler, err := di.InitializeTimeHandler(logger)
 	if err != nil {
 		logger.Fatal("Failed to initialize time handler: ", err)
@@ -34,27 +31,16 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 		logger.Fatal("Failed to initialize WebSocket handler: ", err)
 	}
 
-	// NTP時刻同期を開始
-	go timeHandler.StartTimeSync(ctx)
-
-	// WebSocket Hubの実行を開始
-	go wsHandler.Run()
-
-	router := chi.NewRouter()
-
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Write(indexHtml)
-	})
-	var assetsSubFS fs.FS
-	if assetsSubFS, err = fs.Sub(assetsFS, "embed_static/assets"); err != nil {
+	assetsSubFS, err := fs.Sub(assetsFS, "embed_static/assets")
+	if err != nil {
 		logger.Fatal("Failed to create sub filesystem: ", err)
 	}
-	router.Handle("/assets/*", http.StripPrefix("/assets/", http.FileServer(http.FS(assetsSubFS))))
 
-	router.Handle("/ws", http.HandlerFunc(wsHandler.ServeWS))
+	go timeHandler.StartTimeSync(ctx)
+	go wsHandler.Run()
 
-	router.Get("/api/time", http.HandlerFunc(timeHandler.GetTime))
+	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS)
+	router := router.NewRouter(staticHandler, timeHandler, wsHandler)
 
 	logger.Info(fmt.Sprintf("Server started on :%s", config.App.Port))
 	server := httpserver.New(router, httpserver.Port(config.App.Port))
