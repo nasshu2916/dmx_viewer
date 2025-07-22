@@ -6,6 +6,7 @@ require (
 	github.com/beevik/ntp v1.4.3
 	github.com/go-chi/chi v1.5.5
 	github.com/gorilla/websocket v1.5.3
+	github.com/jsimonetti/go-artnet v0.0.0-20250601170402-73b5741bebbf // Replace with actual latest commit hash or version
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
 )

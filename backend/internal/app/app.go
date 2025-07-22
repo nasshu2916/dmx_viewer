@@ -9,6 +9,7 @@ import (
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/di"
+	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
 	httpHandler "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
 	"github.com/nasshu2916/dmx_viewer/internal/interface/router"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
@@ -36,8 +37,15 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 		logger.Fatal("Failed to create sub filesystem: ", err)
 	}
 
+	artnetServer := artnet.NewServer(logger, &config.ArtNet)
+
 	go timeHandler.StartTimeSync(ctx)
 	go wsHandler.Run()
+	go func() {
+		if err := artnetServer.Run(); err != nil {
+			logger.Error("ArtNet server stopped with error: ", err)
+		}
+	}()
 
 	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS)
 	router := router.NewRouter(staticHandler, timeHandler, wsHandler)
