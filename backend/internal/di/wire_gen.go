@@ -8,9 +8,9 @@ package di
 
 import (
 	"github.com/nasshu2916/dmx_viewer/internal/config"
-	"github.com/nasshu2916/dmx_viewer/internal/handler/http"
-	"github.com/nasshu2916/dmx_viewer/internal/handler/websocket"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure"
+	"github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
+	"github.com/nasshu2916/dmx_viewer/internal/interface/handler/websocket"
 	"github.com/nasshu2916/dmx_viewer/internal/usecase"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )

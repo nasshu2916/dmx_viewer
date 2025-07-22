@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	internalHttp "github.com/nasshu2916/dmx_viewer/internal/handler/http"
+	internalHttp "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
