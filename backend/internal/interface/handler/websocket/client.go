@@ -46,6 +46,9 @@ func NewClient(hub *Hub, conn *websocket.Conn, logger *logger.Logger) *Client {
 
 func (c *Client) readPump() {
 	defer func() {
+		if r := recover(); r != nil {
+			c.logger.Error("panic recovered in readPump", "panic", r)
+		}
 		c.hub.LeaveClient(c)
 		c.conn.Close()
 	}()
