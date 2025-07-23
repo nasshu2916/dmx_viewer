@@ -4,6 +4,8 @@ import (
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
+const AllSubscribedTopic = "BROADCAST_ALL"
+
 type SubscribeTopic string
 
 type TopicMessage struct {
@@ -47,6 +49,12 @@ func NewHub(logger *logger.Logger) *Hub {
 }
 
 func (h *Hub) Run() {
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.Error("panic recovered in Hub.Run", "panic", r)
+		}
+	}()
+
 	for {
 		select {
 		case client := <-h.join:
@@ -80,6 +88,7 @@ func (h *Hub) Run() {
 							h.logger.Info("Failed to send message to client, closing connection", "addr", client.conn.RemoteAddr(), "topic", topicMessage.topic)
 						} else {
 							h.logger.Warn("Failed to send message to client, client not found", "addr", client.conn.RemoteAddr(), "topic", topicMessage.topic)
+							// If the client is not connected, remove it from the hub
 							h.unsubscribeTopic(client, topicMessage.topic)
 						}
 					}

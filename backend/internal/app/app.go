@@ -11,6 +11,7 @@ import (
 	"github.com/nasshu2916/dmx_viewer/internal/di"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
 	httpHandler "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
+	"github.com/nasshu2916/dmx_viewer/internal/interface/handler/websocket"
 	"github.com/nasshu2916/dmx_viewer/internal/interface/router"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -27,10 +28,10 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 		logger.Fatal("Failed to initialize time handler: ", err)
 	}
 
-	wsHandler, err := di.InitializeWebSocketHandler(logger)
-	if err != nil {
-		logger.Fatal("Failed to initialize WebSocket handler: ", err)
-	}
+	hub := websocket.NewHub(logger)
+	go hub.Run()
+
+	wsHandler := websocket.NewWebSocketHandler(hub, logger)
 
 	assetsSubFS, err := fs.Sub(assetsFS, "embed_static/assets")
 	if err != nil {
@@ -40,7 +41,6 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	artnetServer := artnet.NewServer(logger, &config.ArtNet)
 
 	go timeHandler.StartTimeSync(ctx)
-	go wsHandler.Run()
 	go func() {
 		if err := artnetServer.Run(); err != nil {
 			logger.Error("ArtNet server stopped with error: ", err)

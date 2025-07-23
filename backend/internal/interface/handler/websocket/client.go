@@ -10,11 +10,12 @@ import (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub    *Hub
-	conn   *websocket.Conn
-	logger *logger.Logger
-	send   chan []byte
-	topics map[SubscribeTopic]struct{}
+	hub       *Hub
+	conn      *websocket.Conn
+	logger    *logger.Logger
+	send      chan []byte
+	topics    map[SubscribeTopic]struct{}
+	createdAt time.Time
 }
 
 type WebSocketMessage struct {
@@ -33,14 +34,15 @@ const (
 
 func NewClient(hub *Hub, conn *websocket.Conn, logger *logger.Logger) *Client {
 	topics := make(map[SubscribeTopic]struct{})
-	topics["default"] = struct{}{}
+	topics[AllSubscribedTopic] = struct{}{}
 
 	return &Client{
-		hub:    hub,
-		conn:   conn,
-		logger: logger,
-		send:   make(chan []byte, 256),
-		topics: topics,
+		hub:       hub,
+		conn:      conn,
+		logger:    logger,
+		send:      make(chan []byte, 256),
+		topics:    topics,
+		createdAt: time.Now(),
 	}
 }
 
@@ -121,6 +123,10 @@ func (c *Client) SubscribeToTopic(topic SubscribeTopic) {
 }
 
 func (c *Client) UnsubscribeFromTopic(topic SubscribeTopic) {
+	if topic == AllSubscribedTopic {
+		c.logger.Debug("Unsubscribing from all topics", "addr", c.conn.RemoteAddr())
+	}
+
 	c.hub.unsubscribe <- SubscribeRequest{
 		client: c,
 		topic:  topic,

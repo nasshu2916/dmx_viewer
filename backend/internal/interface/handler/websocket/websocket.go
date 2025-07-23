@@ -41,7 +41,3 @@ func (h *WebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	go client.writePump()
 	go client.readPump()
 }
-
-func (h *WebSocketHandler) Run() {
-	go h.hub.Run()
-}

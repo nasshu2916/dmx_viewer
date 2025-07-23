@@ -10,7 +10,6 @@ import (
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure"
 	"github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
-	"github.com/nasshu2916/dmx_viewer/internal/interface/handler/websocket"
 	"github.com/nasshu2916/dmx_viewer/internal/usecase"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -26,10 +25,4 @@ func InitializeTimeHandler(logger2 *logger.Logger) (*http.TimeHandler, error) {
 	timeUseCaseImpl := usecase.NewTimeUseCaseImpl(timeRepositoryImpl, configConfig, logger2)
 	timeHandler := http.NewTimeHandler(timeUseCaseImpl)
 	return timeHandler, nil
-}
-
-func InitializeWebSocketHandler(logger2 *logger.Logger) (*websocket.WebSocketHandler, error) {
-	hub := websocket.NewHub(logger2)
-	webSocketHandler := websocket.NewWebSocketHandler(hub, logger2)
-	return webSocketHandler, nil
 }
