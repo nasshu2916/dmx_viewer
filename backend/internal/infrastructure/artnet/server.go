@@ -12,22 +12,24 @@ import (
 const DefaultPort = 6454
 
 type Server struct {
-	conn      net.PacketConn
-	logger    *logger.Logger
-	config    *config.ArtNet
-	ipAddress string
-	port      int
-	done      chan bool
+	conn       net.PacketConn
+	logger     *logger.Logger
+	config     *config.ArtNet
+	ipAddress  string
+	port       int
+	done       chan bool
+	packetChan chan packet.ArtNetPacket // 受信したArtNetパケットを送信するチャネル
 }
 
 func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
 	return &Server{
-		conn:      nil,
-		logger:    logger,
-		config:    cfg,
-		ipAddress: "",
-		port:      DefaultPort,
-		done:      make(chan bool),
+		conn:       nil,
+		logger:     logger,
+		config:     cfg,
+		ipAddress:  "",
+		port:       DefaultPort,
+		done:       make(chan bool),
+		packetChan: make(chan packet.ArtNetPacket), // チャネルを初期化
 	}
 }
 
@@ -52,6 +54,7 @@ func (s *Server) Run() error {
 			s.conn = nil
 			s.logger.Info("ArtNet server connection closed")
 		}
+		close(s.packetChan)
 	}()
 
 	buffer := make([]byte, 1500)
@@ -60,7 +63,7 @@ func (s *Server) Run() error {
 		case <-s.done:
 			return nil
 		default:
-			n, remoteAddr, err := s.conn.ReadFrom(buffer)
+			n, _, err := s.conn.ReadFrom(buffer)
 			if err != nil {
 				s.logger.Error("Error reading from ArtNet", "error", err)
 				continue
@@ -72,8 +75,7 @@ func (s *Server) Run() error {
 				continue
 			}
 
-			// TODO: Process the received data
-			s.logger.Debug("Received ArtNet packet", "from", remoteAddr.String(), "opcode", p.GetOpCode())
+			s.packetChan <- p
 		}
 	}
 }
@@ -98,4 +100,8 @@ func (s *Server) Stop() {
 	default:
 		close(s.done)
 	}
+}
+
+func (s *Server) PacketChan() <-chan packet.ArtNetPacket {
+	return s.packetChan
 }
