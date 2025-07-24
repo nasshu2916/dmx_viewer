@@ -3,6 +3,7 @@ package artnet
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/jsimonetti/go-artnet/packet"
 	"github.com/nasshu2916/dmx_viewer/internal/config"
@@ -48,7 +49,12 @@ func (s *Server) Run() error {
 	s.conn = conn
 
 	s.logger.Info("ArtNet server started", "address", addr)
+	pollInterval := time.Duration(s.config.PollIntervalSeconds) * time.Second
+	pollTicker := time.NewTicker(pollInterval)
+
 	defer func() {
+		pollTicker.Stop()
+
 		if s.conn != nil {
 			s.conn.Close()
 			s.conn = nil
@@ -62,9 +68,28 @@ func (s *Server) Run() error {
 		select {
 		case <-s.done:
 			return nil
+		case <-pollTicker.C:
+			pollPacket := packet.NewArtPollPacket()
+			data, err := pollPacket.MarshalBinary()
+			if err != nil {
+				s.logger.Error("Failed to marshal ArtPoll packet", "error", err)
+				continue
+			}
+
+			// ブロードキャストアドレスに送信
+			broadcastAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: s.port}
+			_, err = s.Write(data, broadcastAddr)
+			if err != nil {
+				s.logger.Error("Failed to send ArtPoll packet", "error", err)
+			}
 		default:
+			// 受信処理はノンブロッキングで行う
+			s.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 			n, _, err := s.conn.ReadFrom(buffer)
 			if err != nil {
+				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+					continue // タイムアウトの場合は次のループへ
+				}
 				s.logger.Error("Error reading from ArtNet", "error", err)
 				continue
 			}

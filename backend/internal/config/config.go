@@ -19,9 +19,10 @@ type (
 	}
 
 	ArtNet struct {
-		LogLevel  string `env:"ARTNET_LOG_LEVEL" envDefault:"info"`
-		ShortName string `env:"ARTNET_SHORT_NAME" envDefault:"DMX Viewer"`
-		LongName  string `env:"ARTNET_LONG_NAME" envDefault:"DMX Viewer Application"`
+		LogLevel            string `env:"ARTNET_LOG_LEVEL" envDefault:"info"`
+		ShortName           string `env:"ARTNET_SHORT_NAME" envDefault:"DMX Viewer"`
+		LongName            string `env:"ARTNET_LONG_NAME" envDefault:"DMX Viewer Application"`
+		PollIntervalSeconds int    `env:"ARTNET_POLL_INTERVAL_SECONDS" envDefault:"5"`
 	}
 
 	NTP struct {
