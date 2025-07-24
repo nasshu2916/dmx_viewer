@@ -29,35 +29,32 @@ func NewArtNetUseCaseImpl(wsUseCase WebSocketUseCase, logger *logger.Logger) *Ar
 
 // StartPacketForwarding ArtNetサーバーからのパケットをWebSocketに転送する処理を開始
 func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, artNetServer *artnet.Server) {
-	packetChan := artNetServer.PacketChan()
-
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				uc.logger.Error("Panic occurred in packet forwarding", "panic", r)
-			}
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				uc.logger.Info("Packet forwarding stopped due to context cancellation")
-				return
-
-			case artnetPacket, ok := <-packetChan:
-				if !ok {
-					uc.logger.Info("ArtNet packet channel closed, stopping packet forwarding")
-					return
-				}
-
-				// パケットをWebSocketにブロードキャスト
-				if err := uc.wsUseCase.BroadcastArtNetPacket(artnetPacket); err != nil {
-					uc.logger.Error("Failed to broadcast ArtNet packet", "error", err, "opcode", artnetPacket.GetOpCode())
-				}
-			}
+	defer func() {
+		if r := recover(); r != nil {
+			uc.logger.Error("Panic occurred in packet forwarding", "panic", r)
 		}
 	}()
 
+	packetChan := artNetServer.PacketChan()
+
 	uc.logger.Info("Started ArtNet packet forwarding to WebSocket")
-	return
+
+	for {
+		select {
+		case <-ctx.Done():
+			uc.logger.Info("Packet forwarding stopped due to context cancellation")
+			return
+
+		case artnetPacket, ok := <-packetChan:
+			if !ok {
+				uc.logger.Info("ArtNet packet channel closed, stopping packet forwarding")
+				return
+			}
+
+			// パケットをWebSocketにブロードキャスト
+			if err := uc.wsUseCase.BroadcastArtNetPacket(artnetPacket); err != nil {
+				uc.logger.Error("Failed to broadcast ArtNet packet", "error", err, "opcode", artnetPacket.GetOpCode())
+			}
+		}
+	}
 }
