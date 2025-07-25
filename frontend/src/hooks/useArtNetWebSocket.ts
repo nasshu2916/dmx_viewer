@@ -84,7 +84,7 @@ const useArtNetWebSocket = () => {
             return
           }
           if (data.Type === 'artnet_dmx_packet') {
-            const artNetPacket: ArtNet.ArtDMXPacket = JSON.parse(data.Data)
+            const artNetPacket: ArtNet.ArtDMXPacket = data.Data
             const universe = (artNetPacket.Net << 8) | artNetPacket.SubUni
             setDmxData(prevData => ({
               ...prevData,

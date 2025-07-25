@@ -38,7 +38,10 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	// HubからWebSocketRepositoryとUseCaseを作成
 	wsRepo := infrastructure.NewWebSocketRepositoryImpl(hub, logger)
 	wsUseCase := usecase.NewWebSocketUseCaseImpl(wsRepo, logger)
-	artNetUseCase := usecase.NewArtNetUseCaseImpl(wsUseCase, logger)
+
+	// ArtNetパケットハンドラーを作成
+	artNetPacketHandler := usecase.NewArtNetPacketHandler(wsUseCase, logger)
+	artNetUseCase := usecase.NewArtNetUseCaseImpl(artNetPacketHandler, logger)
 
 	assetsSubFS, err := fs.Sub(assetsFS, "embed_static/assets")
 	if err != nil {

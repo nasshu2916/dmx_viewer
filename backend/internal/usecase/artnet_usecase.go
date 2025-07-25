@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"time"
 
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
@@ -15,15 +16,15 @@ type ArtNetBridgeUseCase interface {
 
 // ArtNetBridgeUseCaseImpl ArtNetBridgeUseCaseの実装
 type ArtNetBridgeUseCaseImpl struct {
-	wsUseCase WebSocketUseCase
-	logger    *logger.Logger
+	packetHandler ArtNetPacketHandler
+	logger        *logger.Logger
 }
 
 // NewArtNetUseCaseImpl ArtNetBridgeUseCaseの新しいインスタンスを作成
-func NewArtNetUseCaseImpl(wsUseCase WebSocketUseCase, logger *logger.Logger) *ArtNetBridgeUseCaseImpl {
+func NewArtNetUseCaseImpl(packetHandler ArtNetPacketHandler, logger *logger.Logger) *ArtNetBridgeUseCaseImpl {
 	return &ArtNetBridgeUseCaseImpl{
-		wsUseCase: wsUseCase,
-		logger:    logger,
+		packetHandler: packetHandler,
+		logger:        logger,
 	}
 }
 
@@ -39,6 +40,9 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 
 	uc.logger.Info("Started ArtNet packet forwarding to WebSocket")
 
+	// パフォーマンス監視用のゴルーチンを開始
+	go uc.monitorPerformance(ctx)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -51,9 +55,26 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 				return
 			}
 
-			// パケットをWebSocketにブロードキャスト
-			if err := uc.wsUseCase.BroadcastArtNetPacket(artnetPacket); err != nil {
-				uc.logger.Error("Failed to broadcast ArtNet packet", "error", err, "opcode", artnetPacket.GetOpCode())
+			// パケットを非同期でハンドラーに渡して処理
+			uc.packetHandler.HandlePacketAsync(ctx, artnetPacket)
+		}
+	}
+}
+
+// パフォーマンスを監視する
+func (uc *ArtNetBridgeUseCaseImpl) monitorPerformance(ctx context.Context) {
+	ticker := time.NewTicker(30 * time.Second) // 30秒間隔でモニタリング
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			activeGoroutines := uc.packetHandler.GetActiveGoroutines()
+			if activeGoroutines > 0 {
+				uc.logger.Info("ArtNet packet processing performance",
+					"activeGoroutines", activeGoroutines)
 			}
 		}
 	}
