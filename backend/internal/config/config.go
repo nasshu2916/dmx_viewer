@@ -23,6 +23,7 @@ type (
 		ShortName           string `env:"ARTNET_SHORT_NAME" envDefault:"DMX Viewer"`
 		LongName            string `env:"ARTNET_LONG_NAME" envDefault:"DMX Viewer Application"`
 		PollIntervalSeconds int    `env:"ARTNET_POLL_INTERVAL_SECONDS" envDefault:"5"`
+		ChannelBufferSize   int    `env:"ARTNET_CHANNEL_BUFFER_SIZE" envDefault:"1000"`
 	}
 
 	NTP struct {
