@@ -3,14 +3,14 @@ package usecase
 import (
 	"encoding/json"
 
+	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/internal/domain/repository"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
 // WebSocketUseCase WebSocketに関連するビジネスロジックを定義するインターフェース
 type WebSocketUseCase interface {
-	// 特定のトピックにメッセージをブロードキャストする
-	BroadcastToTopic(topic string, data interface{}) error
+	BroadcastToTopic(topic string, message *model.WebSocketMessage) error
 }
 
 // WebSocketUseCaseImpl WebSocketUseCaseの実装
@@ -28,15 +28,15 @@ func NewWebSocketUseCaseImpl(wsRepo repository.WebSocketRepository, logger *logg
 }
 
 // BroadcastToTopic 特定のトピックにメッセージをブロードキャストする
-func (uc *WebSocketUseCaseImpl) BroadcastToTopic(topic string, data interface{}) error {
-	jsonData, err := json.Marshal(data)
+func (uc *WebSocketUseCaseImpl) BroadcastToTopic(topic string, message *model.WebSocketMessage) error {
+	jsonData, err := json.Marshal(message)
 	if err != nil {
-		uc.logger.Error("Failed to marshal message", "error", err, "topic", topic)
+		uc.logger.Error("Failed to marshal WebSocket message", "error", err, "topic", topic)
 		return err
 	}
 
 	if err := uc.wsRepo.BroadcastToTopic(topic, jsonData); err != nil {
-		uc.logger.Error("Failed to broadcast message", "error", err, "topic", topic)
+		uc.logger.Error("Failed to broadcast WebSocket message", "error", err, "topic", topic)
 		return err
 	}
 	return nil

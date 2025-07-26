@@ -40,7 +40,7 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	wsUseCase := usecase.NewWebSocketUseCaseImpl(wsRepo, logger)
 
 	artNetServer := artnet.NewServer(logger, &config.ArtNet)
-	artNetPacketHandler := usecase.NewArtNetPacketHandler(wsUseCase, artNetServer, logger)
+	artNetPacketHandler := usecase.NewArtNetPacketHandler(wsUseCase, artNetServer, &config.ArtNet, logger)
 	artNetUseCase := usecase.NewArtNetUseCaseImpl(artNetPacketHandler, logger)
 
 	assetsSubFS, err := fs.Sub(assetsFS, "embed_static/assets")

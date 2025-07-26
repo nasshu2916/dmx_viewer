@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/jsimonetti/go-artnet/packet"
+	"github.com/jsimonetti/go-artnet/packet/code"
+	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -35,52 +37,125 @@ type ArtNetPacketHandlerImpl struct {
 	wsUseCase         WebSocketUseCase
 	artNetWriter      ArtNetWriter
 	logger            *logger.Logger
+	config            *config.ArtNet
 	activeGoroutines  int32         // アクティブなゴルーチン数（atomic操作用）
 	maxGoroutines     int32         // 最大ゴルーチン数
 	processingTimeout time.Duration // 処理タイムアウト
 }
 
 // NewArtNetPacketHandler ArtNetPacketHandlerの新しいインスタンスを作成
-func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, logger *logger.Logger) *ArtNetPacketHandlerImpl {
+func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, cfg *config.ArtNet, logger *logger.Logger) *ArtNetPacketHandlerImpl {
 	return &ArtNetPacketHandlerImpl{
 		wsUseCase:         wsUseCase,
 		artNetWriter:      artNetWriter,
 		logger:            logger,
+		config:            cfg,
 		maxGoroutines:     100,             // デフォルト最大ゴルーチン数
 		processingTimeout: 5 * time.Second, // デフォルト処理タイムアウト
 	}
 }
 
-// NewArtNetPacketHandlerWithConfig 設定付きでArtNetPacketHandlerの新しいインスタンスを作成
-func NewArtNetPacketHandlerWithConfig(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, logger *logger.Logger, maxGoroutines int32, timeout time.Duration) *ArtNetPacketHandlerImpl {
-	return &ArtNetPacketHandlerImpl{
-		wsUseCase:         wsUseCase,
-		artNetWriter:      artNetWriter,
-		logger:            logger,
-		maxGoroutines:     maxGoroutines,
-		processingTimeout: timeout,
-	}
-}
-
-// HandlePacket ArtNetパケットを処理する
 func (h *ArtNetPacketHandlerImpl) HandlePacket(artNetPacket packet.ArtNetPacket) error {
 	switch p := artNetPacket.(type) {
 	case *packet.ArtDMXPacket:
-		dmxData, err := model.NewDMXData(p)
-		if err != nil {
-			h.logger.Error("Failed to create DMX data", "error", err)
-			return err
-		}
-		return h.broadcastDMXPacket(dmxData)
+		return h.broadcastDMXPacket(p)
+	case *packet.ArtPollPacket:
+		return h.handleArtPollPacket(p)
 	default:
 		h.logger.Debug("Unsupported ArtNet packet type for WebSocket broadcast", "type", artNetPacket.GetOpCode().String())
 		return nil
 	}
 }
 
-func (h *ArtNetPacketHandlerImpl) broadcastDMXPacket(dmxData *model.DMXData) error {
+func (h *ArtNetPacketHandlerImpl) broadcastDMXPacket(dmxPacket *packet.ArtDMXPacket) error {
+	dmxData, err := model.NewDMXData(dmxPacket)
+	if err != nil {
+		h.logger.Error("Failed to create DMX data", "error", err)
+		return err
+	}
 	msg := model.NewWebSocketMessage("artnet_dmx_packet", dmxData)
 	return h.wsUseCase.BroadcastToTopic("artnet/dmx_packet", msg)
+}
+
+// handleArtPollPacket ArtPollパケットを処理し、ArtPollReplyパケットを送信する
+func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(_ *packet.ArtPollPacket) error {
+	// ArtPollReplyパケットを作成
+	replyPacket, err := h.createArtPollReplyPacket()
+	if err != nil {
+		h.logger.Error("Failed to create ArtPollReply packet", "error", err)
+		return err
+	}
+
+	// ブロードキャストでArtPollReplyパケットを送信
+	if err := h.BroadcastPacket(replyPacket); err != nil {
+		h.logger.Error("Failed to broadcast ArtPollReply packet", "error", err)
+		return err
+	}
+	return nil
+}
+
+// createArtPollReplyPacket ArtPollReplyパケットを作成する
+func (h *ArtNetPacketHandlerImpl) createArtPollReplyPacket() (*packet.ArtPollReplyPacket, error) {
+	replyPacket := packet.NewArtPollReplyPacket()
+
+	// IPアドレスを取得
+	localIP, err := h.getLocalIPAddress()
+	if err != nil {
+		h.logger.Warn("Failed to get local IP address, using 127.0.0.1", "error", err)
+		localIP = net.ParseIP("127.0.0.1")
+	}
+
+	// IPアドレスを設定
+	copy(replyPacket.IPAddress[:], localIP.To4())
+
+	// ポート番号を設定
+	replyPacket.Port = 6454 // ArtNetの標準ポート
+
+	// VersionInfo (ファームウェアバージョン)
+	replyPacket.VersionInfo = 1
+
+	// ショートネームとロングネームを設定
+	copy(replyPacket.ShortName[:], []byte(h.config.ShortName))
+	copy(replyPacket.LongName[:], []byte(h.config.LongName))
+
+	// ノードのタイプを設定 (Node)
+	replyPacket.Style = code.StNode
+
+	// ステータスを設定 (デフォルト値)
+	replyPacket.Status1 = code.Status1(0x00)
+	replyPacket.Status2 = code.Status2(0x00)
+
+	// ESTAマニュファクチャーコード（適当な値を設定）
+	replyPacket.ESTAmanufacturer = [2]byte{'D', 'V'} // DMX Viewer
+
+	// OEMコード
+	replyPacket.Oem = 0x0000
+
+	// ポート数（この実装では出力ポートなしで設定）
+	replyPacket.NumPorts = 0
+
+	// ノードレポート（NodeReportCodeのスライスとして設定）
+	nodeReportStr := "DMX Viewer Ready"
+	for i, char := range []byte(nodeReportStr) {
+		if i >= len(replyPacket.NodeReport) {
+			break
+		}
+		replyPacket.NodeReport[i] = code.NodeReportCode(char)
+	}
+
+	return replyPacket, nil
+}
+
+// getLocalIPAddress ローカルIPアドレスを取得する
+func (h *ArtNetPacketHandlerImpl) getLocalIPAddress() (net.IP, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP, nil
 }
 
 // HandlePacketAsync ArtNetパケットを非同期で処理する
