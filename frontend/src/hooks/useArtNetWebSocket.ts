@@ -102,7 +102,7 @@ const useArtNetWebSocket = () => {
           } else if (data.Type === 'server_message_history') {
             setServerMessages(data.Data)
           } else if (data.Type === 'artnet_nodes') {
-            const nodes: ArtNet.ArtNetNode[] = JSON.parse(data.Data)
+            const nodes: ArtNet.ArtNetNode[] = data.Data
             setArtNetNodes(nodes)
           } else {
             console.log('Received other message type:', data.Type)

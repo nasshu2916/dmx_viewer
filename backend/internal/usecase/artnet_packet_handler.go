@@ -10,6 +10,7 @@ import (
 	"github.com/jsimonetti/go-artnet/packet/code"
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
+	"github.com/nasshu2916/dmx_viewer/internal/domain/repository"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
@@ -41,10 +42,11 @@ type ArtNetPacketHandlerImpl struct {
 	activeGoroutines  int32         // アクティブなゴルーチン数（atomic操作用）
 	maxGoroutines     int32         // 最大ゴルーチン数
 	processingTimeout time.Duration // 処理タイムアウト
+	nodeRepo          repository.ArtNetNodeRepository
 }
 
 // NewArtNetPacketHandler ArtNetPacketHandlerの新しいインスタンスを作成
-func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, cfg *config.ArtNet, logger *logger.Logger) *ArtNetPacketHandlerImpl {
+func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, cfg *config.ArtNet, logger *logger.Logger, nodeRepo repository.ArtNetNodeRepository) *ArtNetPacketHandlerImpl {
 	return &ArtNetPacketHandlerImpl{
 		wsUseCase:         wsUseCase,
 		artNetWriter:      artNetWriter,
@@ -52,6 +54,7 @@ func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWrite
 		config:            cfg,
 		maxGoroutines:     100,             // デフォルト最大ゴルーチン数
 		processingTimeout: 5 * time.Second, // デフォルト処理タイムアウト
+		nodeRepo:          nodeRepo,
 	}
 }
 
@@ -61,6 +64,8 @@ func (h *ArtNetPacketHandlerImpl) HandlePacket(artNetPacket model.ReceivedArtPac
 		return h.broadcastDMXPacket(p)
 	case *packet.ArtPollPacket:
 		return h.handleArtPollPacket(p, artNetPacket.Addr)
+	case *packet.ArtPollReplyPacket:
+		return h.handleArtPollReplyPacket(p)
 	default:
 		h.logger.Debug("Unsupported ArtNet packet type for WebSocket broadcast", "type", artNetPacket.Packet.GetOpCode().String())
 		return nil
@@ -101,6 +106,17 @@ func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(_ *packet.ArtPollPacket, s
 		return err
 	}
 	return nil
+}
+
+func (h *ArtNetPacketHandlerImpl) handleArtPollReplyPacket(replyPacket *packet.ArtPollReplyPacket) error {
+	// 新しいノード情報を保存
+	node := model.NewArtNetNode(replyPacket)
+	h.nodeRepo.Save(node)
+
+	// すべてのノード情報を返す
+	nodes := h.nodeRepo.All()
+	msg := model.NewWebSocketMessage("artnet_nodes", nodes)
+	return h.wsUseCase.BroadcastToTopic("artnet/nodes", msg)
 }
 
 // createArtPollReplyPacket ArtPollReplyパケットを作成する
