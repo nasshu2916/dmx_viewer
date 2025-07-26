@@ -36,7 +36,6 @@ function App() {
         </div>
         <div className="w-1/4 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Settings</h3>
-          <p className="text-dmx-text-light">Configure your DMX settings here.</p>
         </div>
       </main>
       <footer className="flex items-center justify-center bg-dmx-medium-bg p-2 text-sm text-dmx-text-light">
