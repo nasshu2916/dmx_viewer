@@ -59,10 +59,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         reconnectAttempts = 0 // Reset on successful connection
 
         // Subscribe to default topics
-        websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/packet' }))
         websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/dmx_packet' }))
-        websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'server/message' }))
-        websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'server/message_history' }))
         websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/nodes' }))
       }
 
@@ -97,7 +94,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           switch (data.Type) {
             case 'artnet_dmx_packet': {
               const artNetPacket: ArtNet.ArtDMXPacket = data.Data
-              artNetPacket.Data = data.Data.DataValues || []
+              artNetPacket.Data = data.Data.data || []
               const universe = (artNetPacket.Net << 8) | artNetPacket.SubUni
               setDmxData(prevData => ({
                 ...prevData,
