@@ -8,6 +8,7 @@ import (
 
 	"github.com/jsimonetti/go-artnet/packet"
 	"github.com/nasshu2916/dmx_viewer/internal/config"
+	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
@@ -21,9 +22,9 @@ type Server struct {
 	ipAddress         string
 	port              int
 	done              chan bool
-	packetChan        chan packet.ArtNetPacket // 受信したArtNetパケットを送信するチャネル
-	channelBufferSize int                      // チャネルのバッファサイズ
-	droppedPackets    int64                    // ドロップされたパケット数
+	receivedChan      chan model.ReceivedPacket // 受信したArtNetパケットを送信するチャネル
+	channelBufferSize int                       // チャネルのバッファサイズ
+	droppedPackets    int64                     // ドロップされたパケット数
 }
 
 func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
@@ -40,20 +41,18 @@ func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
 		port:              DefaultPort,
 		done:              make(chan bool),
 		channelBufferSize: channelBufferSize,
-		packetChan:        make(chan packet.ArtNetPacket, channelBufferSize),
+		receivedChan:      make(chan model.ReceivedPacket, channelBufferSize),
 		droppedPackets:    0,
 	}
 }
 
 func (s *Server) Run() error {
-	defer func() {
-		if r := recover(); r != nil {
-			s.logger.Error("Panic occurred in ArtNet server", "panic", r)
-		}
-	}()
-
 	addr := fmt.Sprintf("%s:%d", s.ipAddress, s.port)
-	conn, err := net.ListenPacket("udp", addr)
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to resolve UDP address %s: %w", addr, err)
+	}
+	conn, err := net.ListenUDP("udp", udpAddr)
 	if err != nil {
 		return fmt.Errorf("ArtNet server startup failed: %w", err)
 	}
@@ -61,10 +60,17 @@ func (s *Server) Run() error {
 
 	s.logger.Info("ArtNet server started", "address", addr, "channelBufferSize", s.channelBufferSize)
 	pollInterval := time.Duration(s.config.PollIntervalSeconds) * time.Second
+
+	// 定期的にArtPollパケットを送信するためのタイマー
 	pollTicker := time.NewTicker(pollInterval)
 
 	// 統計情報出力用のタイマー（1分間隔）
 	statsTicker := time.NewTicker(60 * time.Second)
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.Error("Panic occurred in ArtNet server", "panic", r)
+		}
+	}()
 
 	defer func() {
 		pollTicker.Stop()
@@ -75,7 +81,7 @@ func (s *Server) Run() error {
 			s.conn = nil
 			s.logger.Info("ArtNet server connection closed")
 		}
-		close(s.packetChan)
+		close(s.receivedChan)
 	}()
 
 	buffer := make([]byte, 1500)
@@ -110,7 +116,7 @@ func (s *Server) Run() error {
 		default:
 			// 受信処理はノンブロッキングで行う
 			s.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-			n, _, err := s.conn.ReadFrom(buffer)
+			n, recievedAddr, err := s.conn.ReadFrom(buffer)
 			if err != nil {
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 					continue // タイムアウトの場合は次のループへ
@@ -119,23 +125,20 @@ func (s *Server) Run() error {
 				continue
 			}
 
-			p, err := packet.Unmarshal(buffer[:n])
-			if err != nil {
-				s.logger.Info("Failed to unmarshal ArtNet packet", "error", err)
-				continue
+			data := make([]byte, n)
+			copy(data, buffer[:n])
+
+			receivedPacket := model.ReceivedPacket{
+				Data: data,
+				Addr: recievedAddr,
 			}
 
 			select {
-			case s.packetChan <- p:
+			case s.receivedChan <- receivedPacket:
 			default:
 				// チャネルが満杯の場合、パケットをドロップ
 				dropped := atomic.AddInt64(&s.droppedPackets, 1)
-				if dropped%100 == 0 { // 100パケットごとにログ出力
-					s.logger.Warn("ArtNet packet channel is full, dropping packets",
-						"droppedPackets", dropped,
-						"channelBufferSize", s.channelBufferSize,
-						"packetType", p.GetOpCode().String())
-				}
+				s.logger.Warn("ArtNet packet channel is full, dropping packets", "droppedPackets", dropped)
 			}
 		}
 	}
@@ -163,8 +166,8 @@ func (s *Server) Stop() {
 	}
 }
 
-func (s *Server) PacketChan() <-chan packet.ArtNetPacket {
-	return s.packetChan
+func (s *Server) ReceivedChan() <-chan model.ReceivedPacket {
+	return s.receivedChan
 }
 
 // ドロップされたパケット数を取得
@@ -174,7 +177,7 @@ func (s *Server) GetDroppedPackets() int64 {
 
 // チャネルの統計情報を取得
 func (s *Server) GetChannelStats() (bufferSize int, queueLength int, droppedPackets int64) {
-	return s.channelBufferSize, len(s.packetChan), atomic.LoadInt64(&s.droppedPackets)
+	return s.channelBufferSize, len(s.receivedChan), atomic.LoadInt64(&s.droppedPackets)
 }
 
 // ドロップされたパケット数をリセット

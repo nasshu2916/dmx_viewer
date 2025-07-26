@@ -71,6 +71,6 @@ func TestServer_ChannelCapacity(t *testing.T) {
 	assert.Equal(t, 2, bufferSize)
 
 	// チャネルの容量確認
-	packetChan := server.PacketChan()
-	assert.Equal(t, 2, cap(packetChan))
+	receivedChan := server.ReceivedChan()
+	assert.Equal(t, 2, cap(receivedChan))
 }

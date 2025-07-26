@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jsimonetti/go-artnet/packet"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -36,7 +37,7 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 		}
 	}()
 
-	packetChan := artNetServer.PacketChan()
+	receivedChan := artNetServer.ReceivedChan()
 
 	uc.logger.Info("Started ArtNet packet forwarding to WebSocket")
 
@@ -49,14 +50,20 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 			uc.logger.Info("Packet forwarding stopped due to context cancellation")
 			return
 
-		case artnetPacket, ok := <-packetChan:
+		case receivedData, ok := <-receivedChan:
 			if !ok {
 				uc.logger.Info("ArtNet packet channel closed, stopping packet forwarding")
 				return
 			}
 
+			packet, err := packet.Unmarshal(receivedData.Data)
+			if err != nil {
+				uc.logger.Info("Failed to unmarshal ArtNet packet", "error", err)
+				continue
+			}
+
 			// パケットを非同期でハンドラーに渡して処理
-			uc.packetHandler.HandlePacketAsync(ctx, artnetPacket)
+			uc.packetHandler.HandlePacketAsync(ctx, packet)
 		}
 	}
 }
