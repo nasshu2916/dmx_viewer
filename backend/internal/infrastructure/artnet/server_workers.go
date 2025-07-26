@@ -42,8 +42,6 @@ func (s *Server) processIncomingPackets(buffer []byte) error {
 				s.logger.Debug("Receiver stopped during timeout")
 				return fmt.Errorf("receiver stopped")
 			default:
-				// タイムアウトは正常な動作なので、デバッグレベルでログ出力して続行
-				s.logger.Debug("Read timeout, continuing to receive")
 				return nil // エラーを返さずに受信を続ける
 			}
 		}
