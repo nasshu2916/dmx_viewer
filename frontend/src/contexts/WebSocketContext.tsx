@@ -37,28 +37,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [serverMessages, setServerMessages] = useState<ServerMessage[]>([])
   const [artNetNodes, setArtNetNodes] = useState<ArtNet.ArtNetNode[]>([])
 
-  // Fetch initial DMX data on mount
-  useEffect(() => {
-    const fetchDMXData = async () => {
-      try {
-        const res = await fetch('/api/dmx_data')
-        if (!res.ok) {
-          console.error('Failed to fetch initial DMX data')
-          return
-        }
-        const data = await res.json()
-        const parsedData: Record<number, ArtNet.DmxValue[]> = {}
-        for (const key in data) {
-          parsedData[Number(key)] = Array.from(data[key]) as ArtNet.DmxValue[]
-        }
-        setDmxData(parsedData)
-      } catch (e) {
-        logger.error('Error fetching initial DMX data:', e)
-      }
-    }
-    fetchDMXData()
-  }, [])
-
   // WebSocket connection management
   useEffect(() => {
     if (!wsUrl) {
