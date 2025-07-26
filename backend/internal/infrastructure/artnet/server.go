@@ -23,11 +23,11 @@ type Server struct {
 	ipAddress          string
 	port               int
 	done               chan bool
-	receivedChan       chan model.ReceivedPacket // 受信したArtNetパケットを送信するチャネル
-	sendChan           chan SendPacket           // 送信するパケットのチャネル
-	channelBufferSize  int                       // チャネルのバッファサイズ
-	droppedPackets     int64                     // ドロップされたパケット数
-	droppedSendPackets int64                     // ドロップされた送信パケット数
+	receivedChan       chan model.ReceivedData // 受信したArtNetパケットを送信するチャネル
+	sendChan           chan SendPacket         // 送信するパケットのチャネル
+	channelBufferSize  int                     // チャネルのバッファサイズ
+	droppedPackets     int64                   // ドロップされたパケット数
+	droppedSendPackets int64                   // ドロップされた送信パケット数
 }
 
 func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
@@ -44,7 +44,7 @@ func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
 		port:               DefaultPort,
 		done:               make(chan bool),
 		channelBufferSize:  channelBufferSize,
-		receivedChan:       make(chan model.ReceivedPacket, channelBufferSize),
+		receivedChan:       make(chan model.ReceivedData, channelBufferSize),
 		sendChan:           make(chan SendPacket, channelBufferSize),
 		droppedPackets:     0,
 		droppedSendPackets: 0,
@@ -157,7 +157,7 @@ func (s *Server) Stop() {
 	}
 }
 
-func (s *Server) ReceivedChan() <-chan model.ReceivedPacket {
+func (s *Server) ReceivedChan() <-chan model.ReceivedData {
 	return s.receivedChan
 }
 

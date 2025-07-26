@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jsimonetti/go-artnet/packet"
+	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
@@ -56,10 +57,15 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 				return
 			}
 
-			packet, err := packet.Unmarshal(receivedData.Data)
+			artPacket, err := packet.Unmarshal(receivedData.Data)
 			if err != nil {
 				uc.logger.Info("Failed to unmarshal ArtNet packet", "error", err)
 				continue
+			}
+
+			packet := model.ReceivedArtPacket{
+				Packet: artPacket,
+				Addr:   receivedData.Addr,
 			}
 
 			// パケットを非同期でハンドラーに渡して処理

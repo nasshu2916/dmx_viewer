@@ -21,9 +21,9 @@ type ArtNetWriter interface {
 // ArtNetPacketHandler ArtNetパケットを処理するハンドラーのインターフェース
 type ArtNetPacketHandler interface {
 	// ArtNetパケットを処理する
-	HandlePacket(packet packet.ArtNetPacket) error
+	HandlePacket(packet model.ReceivedArtPacket) error
 	// ArtNetパケットを非同期で処理する
-	HandlePacketAsync(ctx context.Context, packet packet.ArtNetPacket)
+	HandlePacketAsync(ctx context.Context, packet model.ReceivedArtPacket)
 	// 処理中のゴルーチン数を取得
 	GetActiveGoroutines() int
 	// ArtNetパケットを送信する
@@ -55,14 +55,14 @@ func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWrite
 	}
 }
 
-func (h *ArtNetPacketHandlerImpl) HandlePacket(artNetPacket packet.ArtNetPacket) error {
-	switch p := artNetPacket.(type) {
+func (h *ArtNetPacketHandlerImpl) HandlePacket(artNetPacket model.ReceivedArtPacket) error {
+	switch p := artNetPacket.Packet.(type) {
 	case *packet.ArtDMXPacket:
 		return h.broadcastDMXPacket(p)
 	case *packet.ArtPollPacket:
 		return h.handleArtPollPacket(p)
 	default:
-		h.logger.Debug("Unsupported ArtNet packet type for WebSocket broadcast", "type", artNetPacket.GetOpCode().String())
+		h.logger.Debug("Unsupported ArtNet packet type for WebSocket broadcast", "type", artNetPacket.Packet.GetOpCode().String())
 		return nil
 	}
 }
@@ -159,7 +159,7 @@ func (h *ArtNetPacketHandlerImpl) getLocalIPAddress() (net.IP, error) {
 }
 
 // HandlePacketAsync ArtNetパケットを非同期で処理する
-func (h *ArtNetPacketHandlerImpl) HandlePacketAsync(ctx context.Context, artNetPacket packet.ArtNetPacket) {
+func (h *ArtNetPacketHandlerImpl) HandlePacketAsync(ctx context.Context, receivedPacket model.ReceivedArtPacket) {
 	// ゴルーチン数の制限をチェック
 	currentGoroutines := atomic.LoadInt32(&h.activeGoroutines)
 
@@ -167,7 +167,7 @@ func (h *ArtNetPacketHandlerImpl) HandlePacketAsync(ctx context.Context, artNetP
 		h.logger.Warn("Max goroutines reached, dropping packet",
 			"activeGoroutines", currentGoroutines,
 			"maxGoroutines", h.maxGoroutines,
-			"packetType", artNetPacket.GetOpCode().String())
+			"packetType", receivedPacket.Packet.GetOpCode().String())
 		return
 	}
 
@@ -192,19 +192,19 @@ func (h *ArtNetPacketHandlerImpl) HandlePacketAsync(ctx context.Context, artNetP
 		// タイムアウト制御付きで処理を実行
 		done := make(chan error, 1)
 		go func() {
-			done <- h.HandlePacket(artNetPacket)
+			done <- h.HandlePacket(receivedPacket)
 		}()
 
 		select {
 		case <-processingCtx.Done():
 			h.logger.Warn("Packet processing timed out",
 				"timeout", h.processingTimeout,
-				"packetType", artNetPacket.GetOpCode().String())
+				"packetType", receivedPacket.Packet.GetOpCode().String())
 		case err := <-done:
 			if err != nil {
 				h.logger.Error("Failed to process packet asynchronously",
 					"error", err,
-					"packetType", artNetPacket.GetOpCode().String())
+					"packetType", receivedPacket.Packet.GetOpCode().String())
 			}
 		}
 	}()
@@ -235,7 +235,6 @@ func (h *ArtNetPacketHandlerImpl) SendPacket(artNetPacket packet.ArtNetPacket, a
 		return err
 	}
 
-	h.logger.Debug("Successfully sent ArtNet packet", "address", addr.String(), "packetType", artNetPacket.GetOpCode().String())
 	return nil
 }
 

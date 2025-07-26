@@ -55,7 +55,7 @@ func (s *Server) processIncomingPackets(buffer []byte) error {
 	data := make([]byte, n)
 	copy(data, buffer[:n])
 
-	receivedPacket := model.ReceivedPacket{
+	receivedPacket := model.ReceivedData{
 		Data: data,
 		Addr: recievedAddr,
 	}
@@ -64,7 +64,7 @@ func (s *Server) processIncomingPackets(buffer []byte) error {
 }
 
 // sendToReceiveChannel 受信チャンネルにパケットを送信
-func (s *Server) sendToReceiveChannel(packet model.ReceivedPacket) error {
+func (s *Server) sendToReceiveChannel(packet model.ReceivedData) error {
 	select {
 	case s.receivedChan <- packet:
 		return nil
@@ -99,13 +99,11 @@ func (s *Server) processSendPacket(sendPacket SendPacket) {
 		return
 	}
 
-	n, err := s.conn.WriteTo(sendPacket.Data, sendPacket.Addr)
+	_, err := s.conn.WriteTo(sendPacket.Data, sendPacket.Addr)
 	if err != nil {
 		s.logger.Error("Error writing to ArtNet", "error", err, "address", sendPacket.Addr.String())
 		return
 	}
-
-	s.logger.Debug("Sent packet", "to", sendPacket.Addr.String(), "size", n)
 
 	// 送信チャンネルの使用率をチェック
 	s.checkSendChannelUtilization()
