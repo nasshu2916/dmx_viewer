@@ -18,10 +18,12 @@ func TestServer_ChannelBuffering(t *testing.T) {
 	server := NewServer(logger, cfg)
 
 	// 初期状態の確認
-	bufferSize, queueLength, droppedPackets := server.GetChannelStats()
+	bufferSize, receiveQueueLength, sendQueueLength, droppedReceivePackets, droppedSendPackets := server.GetChannelStats()
 	assert.Equal(t, 10, bufferSize)
-	assert.Equal(t, 0, queueLength)
-	assert.Equal(t, int64(0), droppedPackets)
+	assert.Equal(t, 0, receiveQueueLength)
+	assert.Equal(t, 0, sendQueueLength)
+	assert.Equal(t, int64(0), droppedReceivePackets)
+	assert.Equal(t, int64(0), droppedSendPackets)
 }
 
 func TestServer_DefaultConfiguration(t *testing.T) {
@@ -33,10 +35,12 @@ func TestServer_DefaultConfiguration(t *testing.T) {
 	server := NewServer(logger, cfg)
 
 	// デフォルト値の確認
-	bufferSize, queueLength, droppedPackets := server.GetChannelStats()
+	bufferSize, receiveQueueLength, sendQueueLength, droppedReceivePackets, droppedSendPackets := server.GetChannelStats()
 	assert.Equal(t, DefaultChannelBufferSize, bufferSize)
-	assert.Equal(t, 0, queueLength)
-	assert.Equal(t, int64(0), droppedPackets)
+	assert.Equal(t, 0, receiveQueueLength)
+	assert.Equal(t, 0, sendQueueLength)
+	assert.Equal(t, int64(0), droppedReceivePackets)
+	assert.Equal(t, int64(0), droppedSendPackets)
 }
 
 func TestServer_StatsReset(t *testing.T) {
@@ -67,7 +71,7 @@ func TestServer_ChannelCapacity(t *testing.T) {
 	server := NewServer(logger, cfg)
 
 	// チャネルが適切なサイズで作成されているか確認
-	bufferSize, _, _ := server.GetChannelStats()
+	bufferSize, _, _, _, _ := server.GetChannelStats()
 	assert.Equal(t, 2, bufferSize)
 
 	// チャネルの容量確認

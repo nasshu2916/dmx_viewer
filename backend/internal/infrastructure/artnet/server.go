@@ -3,28 +3,31 @@ package artnet
 import (
 	"fmt"
 	"net"
-	"sync/atomic"
 	"time"
 
-	"github.com/jsimonetti/go-artnet/packet"
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
-const DefaultPort = 6454
-const DefaultChannelBufferSize = 1000
+// SendPacket 送信するパケットの情報
+type SendPacket struct {
+	Data []byte
+	Addr net.Addr
+}
 
 type Server struct {
-	conn              net.PacketConn
-	logger            *logger.Logger
-	config            *config.ArtNet
-	ipAddress         string
-	port              int
-	done              chan bool
-	receivedChan      chan model.ReceivedPacket // 受信したArtNetパケットを送信するチャネル
-	channelBufferSize int                       // チャネルのバッファサイズ
-	droppedPackets    int64                     // ドロップされたパケット数
+	conn               net.PacketConn
+	logger             *logger.Logger
+	config             *config.ArtNet
+	ipAddress          string
+	port               int
+	done               chan bool
+	receivedChan       chan model.ReceivedPacket // 受信したArtNetパケットを送信するチャネル
+	sendChan           chan SendPacket           // 送信するパケットのチャネル
+	channelBufferSize  int                       // チャネルのバッファサイズ
+	droppedPackets     int64                     // ドロップされたパケット数
+	droppedSendPackets int64                     // ドロップされた送信パケット数
 }
 
 func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
@@ -34,15 +37,17 @@ func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
 	}
 
 	return &Server{
-		conn:              nil,
-		logger:            logger,
-		config:            cfg,
-		ipAddress:         "",
-		port:              DefaultPort,
-		done:              make(chan bool),
-		channelBufferSize: channelBufferSize,
-		receivedChan:      make(chan model.ReceivedPacket, channelBufferSize),
-		droppedPackets:    0,
+		conn:               nil,
+		logger:             logger,
+		config:             cfg,
+		ipAddress:          "",
+		port:               DefaultPort,
+		done:               make(chan bool),
+		channelBufferSize:  channelBufferSize,
+		receivedChan:       make(chan model.ReceivedPacket, channelBufferSize),
+		sendChan:           make(chan SendPacket, channelBufferSize),
+		droppedPackets:     0,
+		droppedSendPackets: 0,
 	}
 }
 
@@ -61,16 +66,19 @@ func (s *Server) Run() error {
 	s.logger.Info("ArtNet server started", "address", addr, "channelBufferSize", s.channelBufferSize)
 	pollInterval := time.Duration(s.config.PollIntervalSeconds) * time.Second
 
-	// 定期的にArtPollパケットを送信するためのタイマー
+	// ArtPollパケットを定期送信するゴルーチンを開始
 	pollTicker := time.NewTicker(pollInterval)
+	go s.runPollSender(pollTicker)
 
-	// 統計情報出力用のタイマー（1分間隔）
+	// 送信処理を行うゴルーチンを開始
+	go s.runSender()
+
+	// 受信処理を行うゴルーチンを開始
+	go s.runReceiver()
+
+	// 統計監視を行うゴルーチンを開始（1分間隔）
 	statsTicker := time.NewTicker(60 * time.Second)
-	defer func() {
-		if r := recover(); r != nil {
-			s.logger.Error("Panic occurred in ArtNet server", "panic", r)
-		}
-	}()
+	go s.runStatMonitor(statsTicker)
 
 	defer func() {
 		pollTicker.Stop()
@@ -82,80 +90,63 @@ func (s *Server) Run() error {
 			s.logger.Info("ArtNet server connection closed")
 		}
 		close(s.receivedChan)
+		close(s.sendChan)
 	}()
 
-	buffer := make([]byte, 1500)
-	for {
-		select {
-		case <-s.done:
-			return nil
-		case <-statsTicker.C:
-			// 統計情報をログ出力
-			bufferSize, queueLength, droppedPackets := s.GetChannelStats()
-			if droppedPackets > 0 || queueLength > bufferSize/2 {
-				s.logger.Info("ArtNet server statistics",
-					"bufferSize", bufferSize,
-					"queueLength", queueLength,
-					"droppedPackets", droppedPackets,
-					"utilization", float64(queueLength)/float64(bufferSize)*100)
-			}
-		case <-pollTicker.C:
-			pollPacket := packet.NewArtPollPacket()
-			data, err := pollPacket.MarshalBinary()
-			if err != nil {
-				s.logger.Error("Failed to marshal ArtPoll packet", "error", err)
-				continue
-			}
+	<-s.done
+	return nil
+}
 
-			// ブロードキャストアドレスに送信
-			broadcastAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: s.port}
-			_, err = s.Write(data, broadcastAddr)
-			if err != nil {
-				s.logger.Error("Failed to send ArtPoll packet", "error", err)
-			}
-		default:
-			// 受信処理はノンブロッキングで行う
-			s.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-			n, recievedAddr, err := s.conn.ReadFrom(buffer)
-			if err != nil {
-				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-					continue // タイムアウトの場合は次のループへ
-				}
-				s.logger.Error("Error reading from ArtNet", "error", err)
-				continue
-			}
+func (s *Server) SendToWriteChan(data []byte, addr net.Addr) error {
+	if err := s.validateConnection(); err != nil {
+		return err
+	}
 
-			data := make([]byte, n)
-			copy(data, buffer[:n])
+	return s.sendToWriteChanInternal(data, addr)
+}
 
-			receivedPacket := model.ReceivedPacket{
-				Data: data,
-				Addr: recievedAddr,
-			}
+func (s *Server) sendToWriteChanInternal(data []byte, addr net.Addr) error {
+	sendPacket := SendPacket{Data: data, Addr: addr}
 
-			select {
-			case s.receivedChan <- receivedPacket:
-			default:
-				// チャネルが満杯の場合、パケットをドロップ
-				dropped := atomic.AddInt64(&s.droppedPackets, 1)
-				s.logger.Warn("ArtNet packet channel is full, dropping packets", "droppedPackets", dropped)
-			}
-		}
+	select {
+	case s.sendChan <- sendPacket:
+		return nil
+	default:
+		queueLength := len(s.sendChan)
+		DropPacketWithLog(s.logger, &s.droppedSendPackets, SendChannel, queueLength, s.channelBufferSize, addr.String())
+		return fmt.Errorf("%w: %s", ErrSendChannelFull, addr.String())
 	}
 }
 
-func (s *Server) Write(data []byte, addr net.Addr) (int, error) {
-	if s.conn == nil {
-		return 0, fmt.Errorf("ArtNet connection is not established")
+func (s *Server) SendToWriteChanWithTimeout(data []byte, addr net.Addr, timeout time.Duration) error {
+	if err := s.validateConnection(); err != nil {
+		return err
 	}
 
-	n, err := s.conn.WriteTo(data, addr)
-	if err != nil {
-		s.logger.Error("Error writing to ArtNet", "error", err, "address", addr.String())
-		return 0, err
+	return s.sendToWriteChanWithTimeoutInternal(data, addr, timeout)
+}
+
+func (s *Server) sendToWriteChanWithTimeoutInternal(data []byte, addr net.Addr, timeout time.Duration) error {
+	sendPacket := SendPacket{Data: data, Addr: addr}
+
+	select {
+	case s.sendChan <- sendPacket:
+		return nil
+	case <-time.After(timeout):
+		s.logger.Warn("Send channel write timeout",
+			"address", addr.String(),
+			"timeout", timeout,
+			"queueLength", len(s.sendChan),
+			"bufferSize", s.channelBufferSize)
+		return fmt.Errorf("%w after %v: %s", ErrSendChannelTimeout, timeout, addr.String())
 	}
-	s.logger.Debug("Sent packet", "to", addr.String(), "size", n)
-	return n, nil
+}
+
+func (s *Server) validateConnection() error {
+	if s.conn == nil {
+		return ErrConnectionNotEstablished
+	}
+	return nil
 }
 
 func (s *Server) Stop() {
@@ -170,17 +161,16 @@ func (s *Server) ReceivedChan() <-chan model.ReceivedPacket {
 	return s.receivedChan
 }
 
-// ドロップされたパケット数を取得
-func (s *Server) GetDroppedPackets() int64 {
-	return atomic.LoadInt64(&s.droppedPackets)
+func (s *Server) SendChan() <-chan SendPacket {
+	return s.sendChan
 }
 
-// チャネルの統計情報を取得
-func (s *Server) GetChannelStats() (bufferSize int, queueLength int, droppedPackets int64) {
-	return s.channelBufferSize, len(s.receivedChan), atomic.LoadInt64(&s.droppedPackets)
+// テスト専用のチャネル送信メソッド（接続チェックなし）
+func (s *Server) SendToWriteChanForTest(data []byte, addr net.Addr) error {
+	return s.sendToWriteChanInternal(data, addr)
 }
 
-// ドロップされたパケット数をリセット
-func (s *Server) ResetDroppedPackets() {
-	atomic.StoreInt64(&s.droppedPackets, 0)
+// テスト専用のタイムアウト付きチャネル送信メソッド（接続チェックなし）
+func (s *Server) SendToWriteChanWithTimeoutForTest(data []byte, addr net.Addr, timeout time.Duration) error {
+	return s.sendToWriteChanWithTimeoutInternal(data, addr, timeout)
 }

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"net"
 	"sync/atomic"
 	"time"
 
@@ -9,6 +10,11 @@ import (
 	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
+
+// ArtNetWriter ArtNetパケットを送信するためのインターフェース
+type ArtNetWriter interface {
+	SendToWriteChan(data []byte, addr net.Addr) error
+}
 
 // ArtNetPacketHandler ArtNetパケットを処理するハンドラーのインターフェース
 type ArtNetPacketHandler interface {
@@ -18,11 +24,16 @@ type ArtNetPacketHandler interface {
 	HandlePacketAsync(ctx context.Context, packet packet.ArtNetPacket)
 	// 処理中のゴルーチン数を取得
 	GetActiveGoroutines() int
+	// ArtNetパケットを送信する
+	SendPacket(artNetPacket packet.ArtNetPacket, addr net.Addr) error
+	// ArtNetパケットをブロードキャストする
+	BroadcastPacket(artNetPacket packet.ArtNetPacket) error
 }
 
 // ArtNetPacketHandlerImpl ArtNetPacketHandlerの実装
 type ArtNetPacketHandlerImpl struct {
 	wsUseCase         WebSocketUseCase
+	artNetWriter      ArtNetWriter
 	logger            *logger.Logger
 	activeGoroutines  int32         // アクティブなゴルーチン数（atomic操作用）
 	maxGoroutines     int32         // 最大ゴルーチン数
@@ -30,9 +41,10 @@ type ArtNetPacketHandlerImpl struct {
 }
 
 // NewArtNetPacketHandler ArtNetPacketHandlerの新しいインスタンスを作成
-func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, logger *logger.Logger) *ArtNetPacketHandlerImpl {
+func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, logger *logger.Logger) *ArtNetPacketHandlerImpl {
 	return &ArtNetPacketHandlerImpl{
 		wsUseCase:         wsUseCase,
+		artNetWriter:      artNetWriter,
 		logger:            logger,
 		maxGoroutines:     100,             // デフォルト最大ゴルーチン数
 		processingTimeout: 5 * time.Second, // デフォルト処理タイムアウト
@@ -40,9 +52,10 @@ func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, logger *logger.Logger) *
 }
 
 // NewArtNetPacketHandlerWithConfig 設定付きでArtNetPacketHandlerの新しいインスタンスを作成
-func NewArtNetPacketHandlerWithConfig(wsUseCase WebSocketUseCase, logger *logger.Logger, maxGoroutines int32, timeout time.Duration) *ArtNetPacketHandlerImpl {
+func NewArtNetPacketHandlerWithConfig(wsUseCase WebSocketUseCase, artNetWriter ArtNetWriter, logger *logger.Logger, maxGoroutines int32, timeout time.Duration) *ArtNetPacketHandlerImpl {
 	return &ArtNetPacketHandlerImpl{
 		wsUseCase:         wsUseCase,
+		artNetWriter:      artNetWriter,
 		logger:            logger,
 		maxGoroutines:     maxGoroutines,
 		processingTimeout: timeout,
@@ -125,4 +138,42 @@ func (h *ArtNetPacketHandlerImpl) HandlePacketAsync(ctx context.Context, artNetP
 // GetActiveGoroutines 処理中のゴルーチン数を取得
 func (h *ArtNetPacketHandlerImpl) GetActiveGoroutines() int {
 	return int(atomic.LoadInt32(&h.activeGoroutines))
+}
+
+// SendPacket ArtNetパケットを指定されたアドレスに送信する
+// 使用例:
+//
+//	dmxPacket := packet.NewArtDMXPacket()
+//	dmxPacket.Universe = 0
+//	dmxPacket.Data = []byte{255, 128, 0, ...} // DMXデータ
+//	addr := &net.UDPAddr{IP: net.ParseIP("192.168.1.100"), Port: 6454}
+//	err := handler.SendPacket(dmxPacket, addr)
+func (h *ArtNetPacketHandlerImpl) SendPacket(artNetPacket packet.ArtNetPacket, addr net.Addr) error {
+	data, err := artNetPacket.MarshalBinary()
+	if err != nil {
+		h.logger.Error("Failed to marshal ArtNet packet for sending", "error", err, "packetType", artNetPacket.GetOpCode().String())
+		return err
+	}
+
+	if err := h.artNetWriter.SendToWriteChan(data, addr); err != nil {
+		h.logger.Error("Failed to send ArtNet packet", "error", err, "address", addr.String(), "packetType", artNetPacket.GetOpCode().String())
+		return err
+	}
+
+	h.logger.Debug("Successfully sent ArtNet packet", "address", addr.String(), "packetType", artNetPacket.GetOpCode().String())
+	return nil
+}
+
+// BroadcastPacket ArtNetパケットをブロードキャストする
+// 使用例:
+//
+//	pollPacket := packet.NewArtPollPacket()
+//	err := handler.BroadcastPacket(pollPacket)
+func (h *ArtNetPacketHandlerImpl) BroadcastPacket(artNetPacket packet.ArtNetPacket) error {
+	broadcastAddr := &net.UDPAddr{
+		IP:   net.IPv4bcast,
+		Port: 6454, // ArtNetのデフォルトポート
+	}
+
+	return h.SendPacket(artNetPacket, broadcastAddr)
 }

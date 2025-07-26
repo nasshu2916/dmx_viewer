@@ -39,16 +39,14 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	wsRepo := infrastructure.NewWebSocketRepositoryImpl(hub, logger)
 	wsUseCase := usecase.NewWebSocketUseCaseImpl(wsRepo, logger)
 
-	// ArtNetパケットハンドラーを作成
-	artNetPacketHandler := usecase.NewArtNetPacketHandler(wsUseCase, logger)
+	artNetServer := artnet.NewServer(logger, &config.ArtNet)
+	artNetPacketHandler := usecase.NewArtNetPacketHandler(wsUseCase, artNetServer, logger)
 	artNetUseCase := usecase.NewArtNetUseCaseImpl(artNetPacketHandler, logger)
 
 	assetsSubFS, err := fs.Sub(assetsFS, "embed_static/assets")
 	if err != nil {
 		logger.Fatal("Failed to create sub filesystem: ", err)
 	}
-
-	artNetServer := artnet.NewServer(logger, &config.ArtNet)
 
 	go timeHandler.StartTimeSync(ctx)
 	go func() {
