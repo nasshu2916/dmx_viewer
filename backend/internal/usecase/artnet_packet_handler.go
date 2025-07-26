@@ -60,7 +60,7 @@ func (h *ArtNetPacketHandlerImpl) HandlePacket(artNetPacket model.ReceivedArtPac
 	case *packet.ArtDMXPacket:
 		return h.broadcastDMXPacket(p)
 	case *packet.ArtPollPacket:
-		return h.handleArtPollPacket(p)
+		return h.handleArtPollPacket(p, artNetPacket.Addr)
 	default:
 		h.logger.Debug("Unsupported ArtNet packet type for WebSocket broadcast", "type", artNetPacket.Packet.GetOpCode().String())
 		return nil
@@ -78,7 +78,16 @@ func (h *ArtNetPacketHandlerImpl) broadcastDMXPacket(dmxPacket *packet.ArtDMXPac
 }
 
 // handleArtPollPacket ArtPollパケットを処理し、ArtPollReplyパケットを送信する
-func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(_ *packet.ArtPollPacket) error {
+func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(_ *packet.ArtPollPacket, srcAddr net.Addr) error {
+	// 送信元が自分自身の場合は返信しない
+	udpAddr, ok := srcAddr.(*net.UDPAddr)
+	if ok {
+		localIP, err := h.getLocalIPAddress()
+		if err == nil && udpAddr.IP.Equal(localIP) {
+			return nil
+		}
+	}
+
 	// ArtPollReplyパケットを作成
 	replyPacket, err := h.createArtPollReplyPacket()
 	if err != nil {
@@ -86,9 +95,9 @@ func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(_ *packet.ArtPollPacket) e
 		return err
 	}
 
-	// ブロードキャストでArtPollReplyパケットを送信
-	if err := h.BroadcastPacket(replyPacket); err != nil {
-		h.logger.Error("Failed to broadcast ArtPollReply packet", "error", err)
+	// 送信元アドレスにArtPollReplyパケットを送信
+	if err := h.SendPacket(replyPacket, srcAddr); err != nil {
+		h.logger.Error("Failed to send ArtPollReply packet", "error", err)
 		return err
 	}
 	return nil
