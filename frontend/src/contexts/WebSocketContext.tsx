@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { logger } from '@/utils/logger'
+import { useWebSocketManager } from '@/infrastructure/websocket'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
+import { logger } from '@/utils/logger'
 
 interface WebSocketContextType {
   // WebSocket connection state
   isConnected: boolean
-  ws: WebSocket | null
 
   // Data states
   dmxData: Record<number, ArtNet.DmxValue[]>
@@ -15,9 +15,11 @@ interface WebSocketContextType {
   artNetNodes: ArtNet.ArtNetNode[]
 
   // Methods
-  sendMessage: (message: unknown) => void
+  sendMessage: (message: unknown) => boolean
   subscribe: (topic: string) => void
   unsubscribe: (topic: string) => void
+  connect: () => void
+  disconnect: () => void
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
@@ -31,6 +33,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children,
   wsUrl = import.meta.env.VITE_WEBSOCKET_URL,
 }) => {
+  const webSocketManager = useWebSocketManager({
+    url: wsUrl || '',
+    maxReconnectAttempts: 30,
+    reconnectInterval: 1000,
+  })
+
   const [ws, setWs] = useState<WebSocket | null>(null)
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [dmxData, setDmxData] = useState<Record<number, ArtNet.DmxValue[]>>({})
@@ -137,8 +145,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     connectWebSocket()
 
+    webSocketManager.connect()
+
     return () => {
       websocket?.close()
+      webSocketManager.disconnect()
     }
   }, [wsUrl])
 
@@ -159,14 +170,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }
 
   const contextValue: WebSocketContextType = {
-    isConnected,
-    ws,
-    dmxData,
-    serverMessages,
-    artNetNodes,
-    sendMessage,
-    subscribe,
-    unsubscribe,
+    isConnected: isConnected,
+    dmxData: webSocketManager.dataStore.dmxData,
+    serverMessages: webSocketManager.dataStore.serverMessages,
+    artNetNodes: webSocketManager.dataStore.artNetNodes,
+    sendMessage: webSocketManager.sendMessage,
+    subscribe: webSocketManager.subscribe,
+    unsubscribe: webSocketManager.unsubscribe,
+    connect: webSocketManager.connect,
+    disconnect: webSocketManager.disconnect,
   }
 
   return <WebSocketContext.Provider value={contextValue}>{children}</WebSocketContext.Provider>
