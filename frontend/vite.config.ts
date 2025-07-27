@@ -12,9 +12,7 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   resolve: {
-    alias: {
-      '@': resolve(__dirname, './src'),
-    },
+    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
   },
   server: {
     port: 3000,
