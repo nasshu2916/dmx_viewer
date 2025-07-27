@@ -51,15 +51,3 @@ export const useWebSocketData = () => {
     isConnected,
   }
 }
-
-/**
- * WebSocketの生の接続にアクセスするフック
- */
-export const useWebSocketConnection = () => {
-  const { ws, isConnected } = useWebSocket()
-
-  return {
-    ws,
-    isConnected,
-  }
-}
