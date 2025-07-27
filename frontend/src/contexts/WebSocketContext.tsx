@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { logger } from '../utils/logger'
+import { logger } from '@/utils/logger'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
 

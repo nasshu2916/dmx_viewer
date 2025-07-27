@@ -1,4 +1,4 @@
-import { useWebSocket } from '../contexts/WebSocketContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 
 const useArtNetWebSocket = () => {
   const { dmxData, isConnected, serverMessages, artNetNodes } = useWebSocket()

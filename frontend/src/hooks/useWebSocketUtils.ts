@@ -1,4 +1,4 @@
-import { useWebSocket } from '../contexts/WebSocketContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 
 export const useWebSocketSender = () => {
   const { sendMessage, subscribe, unsubscribe, isConnected } = useWebSocket()

@@ -1,5 +1,5 @@
 import React from 'react'
-import type { ArtNet } from '../types/artnet'
+import type { ArtNet } from '@/types/artnet'
 
 interface DmxChannelCellProps {
   channel: ArtNet.DmxChannel

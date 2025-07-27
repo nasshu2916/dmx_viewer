@@ -1,6 +1,6 @@
 import React from 'react'
 import DmxChannelCell from './DmxChannelCell'
-import type { ArtNet } from '../types/artnet'
+import type { ArtNet } from '@/types/artnet'
 
 interface ArtNetDisplayProps {
   dmxData: Record<number, ArtNet.DmxValue[]>
