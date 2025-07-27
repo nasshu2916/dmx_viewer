@@ -5,10 +5,10 @@ import TimeDisplay from './components/TimeDisplay'
 import UniverseSelector from './components/UniverseSelector'
 import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplay from './components/NodeListDisplay'
-import useArtNetWebSocket from './hooks/useArtNetWebSocket'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 
 function App() {
-  const { dmxData, isConnected, serverMessages, artNetNodes } = useArtNetWebSocket()
+  const { dmxData, isConnected, serverMessages, artNetNodes } = useWebSocket()
   const [selectedUniverse, setSelectedUniverse] = useState<number | undefined>(undefined)
 
   const availableUniverses = Object.keys(dmxData).map(Number).sort()
