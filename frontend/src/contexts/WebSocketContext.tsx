@@ -1,35 +1,16 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { useWebSocketManager } from '@/infrastructure/websocket'
-import type { ArtNet } from '@/types/artnet'
-import type { ServerMessage } from '@/types/websocket'
+import { useWebSocketManager, type WebSocketManager } from '@/infrastructure/websocket'
 import { logger } from '@/utils/logger'
 
-interface WebSocketContextType {
-  // WebSocket connection state
-  isConnected: boolean
-
-  // Data states
-  dmxData: Record<number, ArtNet.DmxValue[]>
-  serverMessages: ServerMessage[]
-  artNetNodes: ArtNet.ArtNetNode[]
-
-  // Methods
-  sendMessage: (message: unknown) => boolean
-  subscribe: (topic: string) => void
-  unsubscribe: (topic: string) => void
-  connect: () => void
-  disconnect: () => void
-}
-
-const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
-
-interface WebSocketProviderProps {
+interface WebSocketManagerProviderProps {
   children: ReactNode
   wsUrl?: string
 }
 
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
+const WebSocketManagerContext = createContext<WebSocketManager | undefined>(undefined)
+
+export const WebSocketProvider: React.FC<WebSocketManagerProviderProps> = ({
   children,
   wsUrl = import.meta.env.VITE_WEBSOCKET_URL,
 }) => {
@@ -39,153 +20,37 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     reconnectInterval: 1000,
   })
 
-  const [ws, setWs] = useState<WebSocket | null>(null)
-  const [isConnected, setIsConnected] = useState<boolean>(false)
-  const [dmxData, setDmxData] = useState<Record<number, ArtNet.DmxValue[]>>({})
-  const [serverMessages, setServerMessages] = useState<ServerMessage[]>([])
-  const [artNetNodes, setArtNetNodes] = useState<ArtNet.ArtNetNode[]>([])
+  const connectAttemptedRef = useRef(false)
 
-  // WebSocket connection management
   useEffect(() => {
     if (!wsUrl) {
       logger.error('WebSocket URL is not provided')
       return
     }
 
-    let websocket: WebSocket | null = null
-    let reconnectAttempts = 0
-    const maxReconnectAttempts = 30
-    const reconnectInterval = 1000
-
-    const connectWebSocket = () => {
-      websocket = new WebSocket(wsUrl)
-
-      websocket.onopen = () => {
-        logger.info('WebSocket connected')
-        setIsConnected(true)
-        setWs(websocket)
-        reconnectAttempts = 0 // Reset on successful connection
-
-        // Subscribe to default topics
-        websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/dmx_packet' }))
-        websocket?.send(JSON.stringify({ type: 'subscribe', topic: 'artnet/nodes' }))
-      }
-
-      websocket.onerror = error => {
-        logger.error('WebSocket error:', error)
-        setIsConnected(false)
-        websocket?.close()
-      }
-
-      websocket.onclose = () => {
-        logger.info('WebSocket disconnected')
-        setIsConnected(false)
-        setWs(null)
-
-        if (reconnectAttempts < maxReconnectAttempts) {
-          reconnectAttempts++
-          logger.info(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts}/${maxReconnectAttempts})...`)
-          setTimeout(connectWebSocket, reconnectInterval)
-        } else {
-          logger.error('Max reconnect attempts reached. WebSocket will not reconnect automatically.')
-        }
-      }
-
-      websocket.onmessage = event => {
-        try {
-          const data = JSON.parse(event.data)
-          if (!data || !data.Type) {
-            logger.warn('Received malformed WebSocket message:', data)
-            return
-          }
-
-          switch (data.Type) {
-            case 'artnet_dmx_packet': {
-              const artNetPacket: ArtNet.ArtDMXPacket = data.Data
-              artNetPacket.Data = data.Data.data || []
-              const universe = (artNetPacket.Net << 8) | artNetPacket.SubUni
-              setDmxData(prevData => ({
-                ...prevData,
-                [universe]: Array.from(artNetPacket.Data) as ArtNet.DmxValue[],
-              }))
-              break
-            }
-
-            case 'server_message': {
-              setServerMessages(prevMessages => {
-                const newMessage: ServerMessage = data
-                if (
-                  prevMessages.length > 0 &&
-                  prevMessages[prevMessages.length - 1].Timestamp === newMessage.Timestamp
-                ) {
-                  return prevMessages
-                }
-                return [...prevMessages, newMessage]
-              })
-              break
-            }
-            case 'server_message_history': {
-              setServerMessages(data.Data)
-              break
-            }
-            case 'artnet_nodes': {
-              const nodes: ArtNet.ArtNetNode[] = data.Data
-              setArtNetNodes(nodes)
-              break
-            }
-
-            default:
-              logger.info('Received message type:', data.Type, data)
-          }
-        } catch (e) {
-          logger.error('Failed to parse WebSocket message:', e)
-        }
-      }
+    // Prevent double connection in React StrictMode
+    if (connectAttemptedRef.current) {
+      logger.info('WebSocketProvider: Connection already attempted, skipping')
+      return
     }
 
-    connectWebSocket()
+    connectAttemptedRef.current = true
 
+    // Auto-connect when component mounts
     webSocketManager.connect()
 
+    // Cleanup on unmount
     return () => {
-      websocket?.close()
       webSocketManager.disconnect()
+      connectAttemptedRef.current = false
     }
-  }, [wsUrl])
+  }, [wsUrl]) // Remove webSocketManager from deps to prevent recreation
 
-  const sendMessage = (message: unknown) => {
-    if (ws && isConnected) {
-      ws.send(JSON.stringify(message))
-    } else {
-      logger.warn('WebSocket is not connected. Message not sent:', message)
-    }
-  }
-
-  const subscribe = (topic: string) => {
-    sendMessage({ type: 'subscribe', topic })
-  }
-
-  const unsubscribe = (topic: string) => {
-    sendMessage({ type: 'unsubscribe', topic })
-  }
-
-  const contextValue: WebSocketContextType = {
-    isConnected: isConnected,
-    dmxData: webSocketManager.dataStore.dmxData,
-    serverMessages: webSocketManager.dataStore.serverMessages,
-    artNetNodes: webSocketManager.dataStore.artNetNodes,
-    sendMessage: webSocketManager.sendMessage,
-    subscribe: webSocketManager.subscribe,
-    unsubscribe: webSocketManager.unsubscribe,
-    connect: webSocketManager.connect,
-    disconnect: webSocketManager.disconnect,
-  }
-
-  return <WebSocketContext.Provider value={contextValue}>{children}</WebSocketContext.Provider>
+  return <WebSocketManagerContext.Provider value={webSocketManager}>{children}</WebSocketManagerContext.Provider>
 }
 
-export const useWebSocket = (): WebSocketContextType => {
-  const context = useContext(WebSocketContext)
+export const useWebSocket = (): WebSocketManager => {
+  const context = useContext(WebSocketManagerContext)
   if (context === undefined) {
     throw new Error('useWebSocket must be used within a WebSocketProvider')
   }

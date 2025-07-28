@@ -1,14 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { WebSocketService, type WebSocketConfig } from './WebSocketService'
 import { MessageRouter, type MessageHandler } from './MessageRouter'
 import { useDataStore, type DataStore } from './DataStore'
 import type { ArtNet } from '@/types/artnet'
+import type { ServerMessage } from '@/types/websocket'
 
 export interface WebSocketManager {
   // Connection state
   isConnected: boolean
 
-  // Data store
+  // Data store properties (flattened)
+  dmxData: Record<number, ArtNet.DmxValue[]>
+  serverMessages: ServerMessage[]
+  artNetNodes: ArtNet.ArtNetNode[]
+
+  // Data store (for internal use)
   dataStore: DataStore
 
   // Actions
@@ -25,9 +31,12 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
   const wsServiceRef = useRef<WebSocketService | null>(null)
   const messageRouterRef = useRef<MessageRouter | null>(null)
 
+  // Memoize config to prevent unnecessary re-initialization
+  const stableConfig = useMemo(() => config, [config.url, config.maxReconnectAttempts, config.reconnectInterval])
+
   // Initialize services
   useEffect(() => {
-    const wsService = new WebSocketService(config)
+    const wsService = new WebSocketService(stableConfig)
     const messageRouter = new MessageRouter()
 
     wsServiceRef.current = wsService
@@ -78,7 +87,7 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
     return () => {
       wsService.disconnect()
     }
-  }, [config])
+  }, [stableConfig])
 
   const sendMessage = (message: unknown): boolean => {
     return wsServiceRef.current?.send(message) ?? false
@@ -103,6 +112,9 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
 
   return {
     isConnected,
+    dmxData: dataStore.dmxData,
+    serverMessages: dataStore.serverMessages,
+    artNetNodes: dataStore.artNetNodes,
     dataStore,
     sendMessage,
     subscribe,

@@ -29,6 +29,7 @@ export class WebSocketService {
   }
 
   connect(): void {
+    logger.info('WebSocketService: connect called')
     if (this.isConnecting || this.isConnected()) {
       logger.info('WebSocket is already connecting or connected')
       return
@@ -63,8 +64,8 @@ export class WebSocketService {
       this.ws?.close()
     }
 
-    this.ws.onclose = () => {
-      logger.info('WebSocket disconnected')
+    this.ws.onclose = event => {
+      logger.info(`WebSocket disconnected - Code: ${event.code}, Reason: ${event.reason}, WasClean: ${event.wasClean}`)
       this.isConnecting = false
       this.handlers.onClose?.()
       this.attemptReconnect()
@@ -81,9 +82,12 @@ export class WebSocketService {
   }
 
   disconnect(): void {
+    logger.info('WebSocketService: disconnect called')
     this.reconnectAttempts = this.config.maxReconnectAttempts // Prevent reconnection
-    this.ws?.close()
-    this.ws = null
+    if (this.ws) {
+      this.ws.close(1000, 'Normal Closure')
+      this.ws = null
+    }
   }
 
   send(message: unknown): boolean {
