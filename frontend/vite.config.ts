@@ -2,11 +2,12 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   build: {
     outDir: '../backend/internal/app/embed_static',
     emptyOutDir: true,
+    sourcemap: mode === 'debug',
   },
   css: {
     postcss: './postcss.config.js',
@@ -26,4 +27,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
