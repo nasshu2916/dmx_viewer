@@ -1,10 +1,17 @@
 package websocket
 
 import (
+	"encoding/json"
+	"time"
+
+	"github.com/jsimonetti/go-artnet/packet"
+	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
 const AllSubscribedTopic = "BROADCAST_ALL"
+
+var dmxIncrement = 0
 
 type SubscribeTopic string
 
@@ -52,6 +59,14 @@ func (h *Hub) Run() {
 	defer func() {
 		if r := recover(); r != nil {
 			h.logger.Error("panic recovered in Hub.Run", "panic", r)
+		}
+	}()
+
+	testPollingTicker := time.NewTicker(200 * time.Millisecond) // 500ms interval for test polling
+	defer testPollingTicker.Stop()
+	go func() {
+		for range testPollingTicker.C {
+			h.testPollingDmxMessage()
 		}
 	}()
 
@@ -124,4 +139,29 @@ func (h *Hub) LeaveClient(client *Client) {
 
 func (h *Hub) BroadcastMessage(topic SubscribeTopic, message []byte) {
 	h.broadcast <- TopicMessage{topic: topic, message: message}
+}
+
+func (h *Hub) testPollingDmxMessage() {
+	// テスト用のポーリングメッセージを送信
+	dmxPacket := packet.NewArtDMXPacket()
+	// ランダムな length 512 の DMX データを生成
+	var dmxDataArr [512]byte
+	for i := range dmxDataArr {
+		dmxDataArr[i] = byte((i + dmxIncrement) % 256) // 0-255
+	}
+	dmxPacket.Data = dmxDataArr
+	dmxIncrement++
+
+	dmxData, err := model.NewDMXData(dmxPacket)
+	if err != nil {
+		h.logger.Error("Failed to create DMX data", "error", err)
+		return
+	}
+	msg := model.NewWebSocketMessage("artnet_dmx_packet", dmxData)
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		h.logger.Error("Failed to marshal WebSocket message", "error", err)
+		return
+	}
+	h.BroadcastMessage(AllSubscribedTopic, jsonData)
 }
