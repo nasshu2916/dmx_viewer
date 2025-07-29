@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
 
-export interface DataStore {
+export interface ArtNetStore {
   // State
   dmxData: Record<number, ArtNet.DmxValue[]>
   serverMessages: ServerMessage[]
@@ -16,7 +16,7 @@ export interface DataStore {
   clearData: () => void
 }
 
-export const useDataStore = (): DataStore => {
+export const useArtNetStore = (): ArtNetStore => {
   const [dmxData, setDmxData] = useState<Record<number, ArtNet.DmxValue[]>>({})
   const [serverMessages, setServerMessages] = useState<ServerMessage[]>([])
   const [artNetNodes, setArtNetNodes] = useState<ArtNet.ArtNetNode[]>([])

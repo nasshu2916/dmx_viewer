@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { WebSocketService, type WebSocketConfig } from './WebSocketService'
 import { MessageRouter, type MessageHandler } from './MessageRouter'
-import { useDataStore, type DataStore } from './DataStore'
+import { useArtNetStore, type ArtNetStore } from '@/stores'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
 
@@ -14,8 +14,8 @@ export interface WebSocketManager {
   serverMessages: ServerMessage[]
   artNetNodes: ArtNet.ArtNetNode[]
 
-  // Data store (for internal use)
-  dataStore: DataStore
+  // Art-Net data store (for internal use)
+  artNetStore: ArtNetStore
 
   // Actions
   sendMessage: (message: unknown) => boolean
@@ -27,7 +27,7 @@ export interface WebSocketManager {
 
 export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager => {
   const [isConnected, setIsConnected] = useState(false)
-  const dataStore = useDataStore()
+  const artNetStore = useArtNetStore()
   const wsServiceRef = useRef<WebSocketService | null>(null)
   const messageRouterRef = useRef<MessageRouter | null>(null)
 
@@ -47,16 +47,16 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
       onArtNetDmxPacket: (packet: ArtNet.ArtDMXPacket) => {
         const universe = (packet.Net << 8) | packet.SubUni
         const dmxValues = Array.from(packet.Data) as ArtNet.DmxValue[]
-        dataStore.updateDmxData(universe, dmxValues)
+        artNetStore.updateDmxData(universe, dmxValues)
       },
       onServerMessage: message => {
-        dataStore.addServerMessage(message)
+        artNetStore.addServerMessage(message)
       },
       onServerMessageHistory: messages => {
-        dataStore.setServerMessages(messages)
+        artNetStore.setServerMessages(messages)
       },
       onArtNetNodes: nodes => {
-        dataStore.setArtNetNodes(nodes)
+        artNetStore.setArtNetNodes(nodes)
       },
     }
 
@@ -107,15 +107,15 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
 
   const disconnect = (): void => {
     wsServiceRef.current?.disconnect()
-    dataStore.clearData()
+    artNetStore.clearData()
   }
 
   return {
     isConnected,
-    dmxData: dataStore.dmxData,
-    serverMessages: dataStore.serverMessages,
-    artNetNodes: dataStore.artNetNodes,
-    dataStore,
+    dmxData: artNetStore.dmxData,
+    serverMessages: artNetStore.serverMessages,
+    artNetNodes: artNetStore.artNetNodes,
+    artNetStore,
     sendMessage,
     subscribe,
     unsubscribe,
