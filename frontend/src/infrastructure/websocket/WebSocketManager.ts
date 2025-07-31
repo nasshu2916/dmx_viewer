@@ -5,6 +5,8 @@ import { useArtNetStore, type ArtNetStore } from '@/stores'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
 
+const DefaultSubscribeTopics = ['artnet/dmx_packet', 'artnet/nodes']
+
 export interface WebSocketManager {
   // Connection state
   isConnected: boolean
@@ -67,8 +69,9 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
       onOpen: () => {
         setIsConnected(true)
         // Subscribe to default topics on connection
-        wsService.send({ type: 'subscribe', topic: 'artnet/dmx_packet' })
-        wsService.send({ type: 'subscribe', topic: 'artnet/nodes' })
+        DefaultSubscribeTopics.forEach(topic => {
+          wsService.send({ type: 'subscribe', topic: topic })
+        })
       },
       onClose: () => {
         setIsConnected(false)
