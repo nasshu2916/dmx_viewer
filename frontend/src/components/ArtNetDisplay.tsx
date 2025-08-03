@@ -7,6 +7,7 @@ interface ArtNetDisplayProps {
   displayUniverse?: [string, number] | undefined
   selectedChannel: ArtNet.DmxChannel | null
   onSelectChannel: (channel: ArtNet.DmxChannel) => void
+  columns: number
 }
 
 interface UniverseTableProps {
@@ -18,6 +19,7 @@ interface UniverseTableProps {
 interface UniverseTableSelectableProps extends UniverseTableProps {
   selectedChannel: ArtNet.DmxChannel | null
   onSelectChannel: (channel: ArtNet.DmxChannel) => void
+  columns: number
 }
 
 const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
@@ -26,7 +28,11 @@ const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
   receivedAt,
   selectedChannel,
   onSelectChannel,
+  columns,
 }) => {
+  const length = data.length
+  const rows = Math.ceil(length / columns)
+
   return (
     <div className="mb-4 rounded-lg bg-dmx-light-bg p-4 shadow-lg">
       <h4 className="mb-2 flex text-lg font-bold text-dmx-text-light">
@@ -38,18 +44,19 @@ const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full min-w-full table-fixed border-collapse text-dmx-text-light">
           <tbody>
-            {Array.from({ length: 32 })
-              .map((_, rowIdx) => ({
-                id: `row-${rowIdx}`,
-                rowIdx: rowIdx,
-              }))
-              .map(row => (
-                <tr className={row.rowIdx % 2 === 0 ? 'bg-dmx-medium-bg' : 'bg-dmx-light-bg'} key={row.id}>
-                  {Array.from({ length: 16 }).map((__, colIdx) => {
-                    const channel = (row.rowIdx * 16 + colIdx) as ArtNet.DmxChannel
+            {Array.from({ length: rows }).map((_, rowIdx) => {
+              const rowStartChannel = rowIdx * columns
+              return (
+                <tr
+                  className={rowIdx % 2 === 0 ? 'bg-dmx-medium-bg' : 'bg-dmx-light-bg'}
+                  key={`row-${universe}-${rowStartChannel}`}
+                >
+                  {Array.from({ length: columns }).map((__, colIdx) => {
+                    const channel = (rowStartChannel + colIdx) as ArtNet.DmxChannel
+                    if (channel >= length) return <td key={`empty-${universe}-${channel}`} />
                     const value = (data[channel] ?? 0) as ArtNet.DmxValue
                     return (
-                      <td key={`channel-${channel}`}>
+                      <td key={`channel-${universe}-${channel}`}>
                         <DmxChannelCell
                           channel={channel}
                           selected={selectedChannel === channel}
@@ -60,7 +67,8 @@ const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
                     )
                   })}
                 </tr>
-              ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -73,6 +81,7 @@ const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({
   displayUniverse,
   selectedChannel,
   onSelectChannel,
+  columns,
 }) => {
   const address = displayUniverse ? displayUniverse[0] : 'Unknown'
   const universe = displayUniverse ? displayUniverse[1] : 0
@@ -84,6 +93,7 @@ const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({
         <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
       ) : (
         <UniverseTable
+          columns={columns}
           data={filtered.data}
           receivedAt={filtered.receivedAt}
           selectedChannel={selectedChannel}
