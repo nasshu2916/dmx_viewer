@@ -59,21 +59,21 @@ func NewArtNetPacketHandler(wsUseCase WebSocketUseCase, artNetWriter ArtNetWrite
 }
 
 func (h *ArtNetPacketHandlerImpl) HandlePacket(artNetPacket model.ReceivedArtPacket) error {
-	switch p := artNetPacket.Packet.(type) {
+	switch packet := artNetPacket.Packet.(type) {
 	case *packet.ArtDMXPacket:
-		return h.broadcastDMXPacket(p)
+		return h.broadcastDMXPacket(artNetPacket.Addr, packet)
 	case *packet.ArtPollPacket:
-		return h.handleArtPollPacket(p, artNetPacket.Addr)
+		return h.handleArtPollPacket(artNetPacket.Addr, packet)
 	case *packet.ArtPollReplyPacket:
-		return h.handleArtPollReplyPacket(p)
+		return h.handleArtPollReplyPacket(packet)
 	default:
 		h.logger.Debug("Unsupported ArtNet packet type for WebSocket broadcast", "type", artNetPacket.Packet.GetOpCode().String())
 		return nil
 	}
 }
 
-func (h *ArtNetPacketHandlerImpl) broadcastDMXPacket(dmxPacket *packet.ArtDMXPacket) error {
-	dmxData, err := model.NewDMXData(dmxPacket)
+func (h *ArtNetPacketHandlerImpl) broadcastDMXPacket(srcAddr net.Addr, dmxPacket *packet.ArtDMXPacket) error {
+	dmxData, err := model.NewDMXData(srcAddr, dmxPacket)
 	if err != nil {
 		h.logger.Error("Failed to create DMX data", "error", err)
 		return err
@@ -83,7 +83,7 @@ func (h *ArtNetPacketHandlerImpl) broadcastDMXPacket(dmxPacket *packet.ArtDMXPac
 }
 
 // handleArtPollPacket ArtPollパケットを処理し、ArtPollReplyパケットを送信する
-func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(_ *packet.ArtPollPacket, srcAddr net.Addr) error {
+func (h *ArtNetPacketHandlerImpl) handleArtPollPacket(srcAddr net.Addr, _ *packet.ArtPollPacket) error {
 	// 送信元が自分自身の場合は返信しない
 	udpAddr, ok := srcAddr.(*net.UDPAddr)
 	if ok {

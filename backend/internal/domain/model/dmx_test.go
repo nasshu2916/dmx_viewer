@@ -1,6 +1,7 @@
 package model
 
 import (
+	"net"
 	"testing"
 
 	"github.com/jsimonetti/go-artnet/packet"
@@ -40,9 +41,14 @@ func TestNewDMXData(t *testing.T) {
 		},
 	}
 
+	addr := &net.UDPAddr{
+		IP:   net.ParseIP("127.0.0.1"),
+		Port: 1234,
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dmx, err := NewDMXData(tt.packet)
+			dmx, err := NewDMXData(addr, tt.packet)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, dmx)

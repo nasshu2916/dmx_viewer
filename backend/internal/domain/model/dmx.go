@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"net"
 
 	"github.com/jsimonetti/go-artnet/packet"
 )
@@ -13,27 +14,33 @@ const (
 
 // DMXData DMXデータを表すドメインモデル
 type DMXData struct {
-	Sequence uint8      `json:"sequence"` // シーケンス番号
-	Physical uint8      `json:"physical"` // 物理出力ポート
-	SubUni   uint8      `json:"subUni"`   // サブユニバース（下位8ビット）
-	Net      uint8      `json:"net"`      // ネット（上位8ビット）
-	Length   uint16     `json:"length"`   // データ長
-	Data     [512]uint8 `json:"data"`     // DMXチャンネルデータ
+	Sequence   uint8      `json:"sequence"`   // シーケンス番号
+	Physical   uint8      `json:"physical"`   // 物理出力ポート
+	SubUni     uint8      `json:"subUni"`     // サブユニバース（下位8ビット）
+	Net        uint8      `json:"net"`        // ネット（上位8ビット）
+	Length     uint16     `json:"length"`     // データ長
+	Data       [512]uint8 `json:"data"`       // DMXチャンネルデータ
+	SourceIP   net.IP     `json:"sourceIP"`   // 送信元IPアドレス
+	SourcePort int        `json:"sourcePort"` // 送信元ポート番号
 }
 
 // NewDMXData ArtDMXPacketからDMXDataを作成
-func NewDMXData(packet *packet.ArtDMXPacket) (*DMXData, error) {
+func NewDMXData(srcAddr net.Addr, packet *packet.ArtDMXPacket) (*DMXData, error) {
 	if packet == nil {
 		return nil, errors.New("packet cannot be nil")
 	}
 
+	addr := srcAddr.(*net.UDPAddr)
+
 	dmx := &DMXData{
-		Sequence: packet.Sequence,
-		Physical: packet.Physical,
-		SubUni:   packet.SubUni,
-		Net:      packet.Net,
-		Length:   packet.Length,
-		Data:     packet.Data,
+		Sequence:   packet.Sequence,
+		Physical:   packet.Physical,
+		SubUni:     packet.SubUni,
+		Net:        packet.Net,
+		Length:     packet.Length,
+		Data:       packet.Data,
+		SourceIP:   addr.IP,
+		SourcePort: addr.Port,
 	}
 
 	if err := dmx.Validate(); err != nil {
@@ -129,11 +136,13 @@ func (d *DMXData) String() string {
 // DMXDataの深いコピーを作成
 func (d *DMXData) Clone() *DMXData {
 	clone := &DMXData{
-		Sequence: d.Sequence,
-		Physical: d.Physical,
-		SubUni:   d.SubUni,
-		Net:      d.Net,
-		Length:   d.Length,
+		Sequence:   d.Sequence,
+		Physical:   d.Physical,
+		SubUni:     d.SubUni,
+		Net:        d.Net,
+		Length:     d.Length,
+		SourceIP:   make(net.IP, len(d.SourceIP)),
+		SourcePort: d.SourcePort,
 	}
 	copy(clone.Data[:], d.Data[:])
 	return clone
