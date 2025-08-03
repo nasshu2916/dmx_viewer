@@ -10,6 +10,7 @@ import type { ArtNet } from '@/types/artnet'
 function App() {
   const { isConnected, serverMessages } = useWebSocket()
   const [selectedUniverse, setSelectedUniverse] = useState<[string, ArtNet.Universe] | undefined>(undefined)
+  const [selectedChannel, setSelectedChannel] = useState<ArtNet.DmxChannel | null>(null)
 
   const handleUniverseSelection = (address: string, universe: ArtNet.Universe) => {
     setSelectedUniverse([address, universe])
@@ -29,10 +30,18 @@ function App() {
           <NodeListDisplayContainer onSelectUniverses={handleUniverseSelection} />
         </div>
         <div className="flex-1 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <ArtNetDisplayContainer displayUniverse={selectedUniverse} />
+          <ArtNetDisplayContainer
+            displayUniverse={selectedUniverse}
+            selectedChannel={selectedChannel}
+            onSelectChannel={setSelectedChannel}
+          />
         </div>
         <div className="w-1/4 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Settings</h3>
+          <div className="mb-2 text-sm">
+            <span className="font-bold">Selected Channel: </span>
+            {selectedChannel !== null ? selectedChannel : 'None'}
+          </div>
         </div>
       </main>
       <footer className="flex items-center justify-center bg-dmx-medium-bg p-2 text-sm text-dmx-text-light">

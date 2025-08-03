@@ -5,6 +5,8 @@ import type { ArtNet } from '@/types/artnet'
 interface ArtNetDisplayProps {
   dmxData: Record<string, Record<number, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
   displayUniverse?: [string, number] | undefined
+  selectedChannel: ArtNet.DmxChannel | null
+  onSelectChannel: (channel: ArtNet.DmxChannel) => void
 }
 
 interface UniverseTableProps {
@@ -13,7 +15,18 @@ interface UniverseTableProps {
   receivedAt?: Date
 }
 
-const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data, receivedAt }) => {
+interface UniverseTableSelectableProps extends UniverseTableProps {
+  selectedChannel: ArtNet.DmxChannel | null
+  onSelectChannel: (channel: ArtNet.DmxChannel) => void
+}
+
+const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
+  universe,
+  data,
+  receivedAt,
+  selectedChannel,
+  onSelectChannel,
+}) => {
   return (
     <div className="mb-4 rounded-lg bg-dmx-light-bg p-4 shadow-lg">
       <h4 className="mb-2 flex text-lg font-bold text-dmx-text-light">
@@ -37,7 +50,12 @@ const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data, receivedA
                     const value = (data[channel] ?? 0) as ArtNet.DmxValue
                     return (
                       <td key={`channel-${channel}`}>
-                        <DmxChannelCell channel={channel} value={value} />
+                        <DmxChannelCell
+                          channel={channel}
+                          selected={selectedChannel === channel}
+                          value={value}
+                          onClick={() => onSelectChannel(channel)}
+                        />
                       </td>
                     )
                   })}
@@ -50,7 +68,12 @@ const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data, receivedA
   )
 }
 
-const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({ dmxData, displayUniverse }) => {
+const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({
+  dmxData,
+  displayUniverse,
+  selectedChannel,
+  onSelectChannel,
+}) => {
   const address = displayUniverse ? displayUniverse[0] : 'Unknown'
   const universe = displayUniverse ? displayUniverse[1] : 0
   const filtered = dmxData[address]?.[universe]
@@ -60,7 +83,13 @@ const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({ dmxData, displayUniverse 
       {filtered === undefined ? (
         <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
       ) : (
-        <UniverseTable data={filtered.data} receivedAt={filtered.receivedAt} universe={universe} />
+        <UniverseTable
+          data={filtered.data}
+          receivedAt={filtered.receivedAt}
+          selectedChannel={selectedChannel}
+          universe={universe}
+          onSelectChannel={onSelectChannel}
+        />
       )}
     </div>
   )
