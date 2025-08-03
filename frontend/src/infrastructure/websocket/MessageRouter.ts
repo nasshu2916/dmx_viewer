@@ -28,10 +28,6 @@ export class MessageRouter {
     switch (Type) {
       case 'artnet_dmx_packet': {
         const artNetPacket: ArtNet.ArtDMXPacket = Data as ArtNet.ArtDMXPacket
-        // Handle the case where data might be nested
-        if (Data && typeof Data === 'object' && 'data' in Data) {
-          artNetPacket.Data = (Data.data as ArtNet.DmxValue[]) || []
-        }
         this.handlers.onArtNetDmxPacket?.(artNetPacket)
         break
       }
