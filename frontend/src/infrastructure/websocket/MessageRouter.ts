@@ -12,6 +12,21 @@ export interface MessageHandler {
 
 export class MessageRouter {
   private handlers: MessageHandler = {}
+  // Typeごとのハンドラマップ
+  private handlerMap: Record<string, (data: unknown) => void> = {
+    artnet_dmx_packet: data => {
+      this.handlers.onArtNetDmxPacket?.(data as ArtNet.ArtDMXPacket)
+    },
+    server_message: data => {
+      this.handlers.onServerMessage?.(data as ServerMessage)
+    },
+    server_message_history: data => {
+      this.handlers.onServerMessageHistory?.(data as ServerMessage[])
+    },
+    artnet_nodes: data => {
+      this.handlers.onArtNetNodes?.(data as ArtNet.ArtNetNode[])
+    },
+  }
 
   setHandlers(handlers: MessageHandler): void {
     this.handlers = { ...this.handlers, ...handlers }
@@ -25,34 +40,11 @@ export class MessageRouter {
 
     const { Type, Data } = message as { Type: string; Data: unknown }
 
-    switch (Type) {
-      case 'artnet_dmx_packet': {
-        const artNetPacket: ArtNet.ArtDMXPacket = Data as ArtNet.ArtDMXPacket
-        this.handlers.onArtNetDmxPacket?.(artNetPacket)
-        break
-      }
-
-      case 'server_message': {
-        const serverMessage = Data as ServerMessage
-        this.handlers.onServerMessage?.(serverMessage)
-        break
-      }
-
-      case 'server_message_history': {
-        const messages = Data as ServerMessage[]
-        this.handlers.onServerMessageHistory?.(messages)
-        break
-      }
-
-      case 'artnet_nodes': {
-        const nodes = Data as ArtNet.ArtNetNode[]
-        this.handlers.onArtNetNodes?.(nodes)
-        break
-      }
-
-      default:
-        logger.info('Received message type:', Type, Data)
-        this.handlers.onUnknownMessage?.(Type, Data)
+    if (Type in this.handlerMap) {
+      this.handlerMap[Type](Data)
+    } else {
+      logger.info('Received message type:', Type, Data)
+      this.handlers.onUnknownMessage?.(Type, Data)
     }
   }
 
