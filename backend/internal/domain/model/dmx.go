@@ -14,14 +14,14 @@ const (
 
 // DMXData DMXデータを表すドメインモデル
 type DMXData struct {
-	Sequence   uint8      `json:"sequence"`   // シーケンス番号
-	Physical   uint8      `json:"physical"`   // 物理出力ポート
-	SubUni     uint8      `json:"subUni"`     // サブユニバース（下位8ビット）
-	Net        uint8      `json:"net"`        // ネット（上位8ビット）
-	Length     uint16     `json:"length"`     // データ長
-	Data       [512]uint8 `json:"data"`       // DMXチャンネルデータ
-	SourceIP   net.IP     `json:"sourceIP"`   // 送信元IPアドレス
-	SourcePort int        `json:"sourcePort"` // 送信元ポート番号
+	Sequence   uint8      `json:"Sequence"`   // シーケンス番号
+	Physical   uint8      `json:"Physical"`   // 物理出力ポート
+	SubUni     uint8      `json:"SubUni"`     // サブユニバース（下位8ビット）
+	Net        uint8      `json:"Net"`        // ネット（上位8ビット）
+	Length     uint16     `json:"Length"`     // データ長
+	Data       [512]uint8 `json:"Data"`       // DMXチャンネルデータ
+	SourceIP   net.IP     `json:"SourceIP"`   // 送信元IPアドレス
+	SourcePort int        `json:"SourcePort"` // 送信元ポート番号
 }
 
 // NewDMXData ArtDMXPacketからDMXDataを作成
