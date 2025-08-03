@@ -22,20 +22,22 @@ const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes,
   }
 
   return (
-    <div className="mb-2">
+    <div className="my-2">
       {universes.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {universes.map(universe => (
-            <label className="flex items-center text-dmx-text-light" key={universe}>
-              <input
-                checked={selectedUniverse?.[0] === address && selectedUniverse?.[1] === universe}
-                className="form-radio h-4 w-4 text-dmx-accent focus:ring-dmx-accent"
-                type="radio"
-                onChange={() => handleRadioChange(address, universe)}
-              />
-              <span className="ml-2">Universe {universe}</span>
-            </label>
-          ))}
+        <div className="flex flex-row gap-2">
+          {universes.map(universe => {
+            const isSelected = selectedUniverse?.[0] === address && selectedUniverse?.[1] === universe
+            return (
+              <button
+                className={`ml-0 rounded border-2 px-4 py-2 transition-colors focus:outline-none ${isSelected ? 'border-dmx-accent bg-dmx-accent/10 text-dmx-accent' : 'border border-gray-600 bg-transparent text-dmx-text-light hover:bg-dmx-accent/5'}`}
+                key={universe}
+                type="button"
+                onClick={() => handleRadioChange(address, universe)}
+              >
+                {universe}
+              </button>
+            )
+          })}{' '}
         </div>
       ) : (
         <p className="text-sm text-gray-500">No universes received.</p>
