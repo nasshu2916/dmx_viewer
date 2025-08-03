@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import './App.css'
-import ArtNetDisplay from './components/ArtNetDisplay'
+import ArtNetDisplayContainer from './components/ArtNetDisplayContainer'
 import TimeDisplayContainer from './components/TimeDisplayContainer'
 import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
-import NodeListDisplay from './components/NodeListDisplay'
+import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 
 function App() {
-  const { dmxData, isConnected, serverMessages, artNetNodes } = useWebSocket()
+  const { isConnected, serverMessages } = useWebSocket()
   const [selectedUniverse, setSelectedUniverse] = useState<[string, number] | undefined>(undefined)
 
   const handleUniverseSelection = (address: string, universe: number) => {
@@ -25,10 +25,10 @@ function App() {
       </header>
       <main className="App-main-content flex flex-1 space-x-4 p-4">
         <div className="w-1/4 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <NodeListDisplay artNetNodes={artNetNodes} dmxData={dmxData} onSelectUniverses={handleUniverseSelection} />
+          <NodeListDisplayContainer onSelectUniverses={handleUniverseSelection} />
         </div>
         <div className="flex-1 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <ArtNetDisplay displayUniverse={selectedUniverse} dmxData={dmxData} />
+          <ArtNetDisplayContainer displayUniverse={selectedUniverse} />
         </div>
         <div className="w-1/4 rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Settings</h3>

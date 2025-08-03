@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import type { ArtNet } from '@/types/artnet'
 
+import type { NodeListDisplayNode } from './NodeListDisplayContainer'
+
 interface NodeListDisplayProps {
-  artNetNodes: ArtNet.ArtNetNode[]
-  dmxData: Record<string, Record<number, ArtNet.DmxValue[]>>
+  nodes: NodeListDisplayNode[]
   onSelectUniverses: (address: string, selected: number) => void
 }
 
@@ -22,7 +23,6 @@ const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes,
 
   return (
     <div className="mb-2">
-      <p className="text-sm text-gray-500">Universes for {address}:</p>
       {universes.length > 0 ? (
         <div className="flex flex-col gap-2">
           {universes.map(universe => (
@@ -57,56 +57,20 @@ const NodeInfo: React.FC<{ node: ArtNet.ArtNetNode }> = ({ node }) => {
   )
 }
 
-const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ artNetNodes, dmxData, onSelectUniverses }) => {
-  // Ensure artNetNodes is always an array
-  const nodes = Array.isArray(artNetNodes) ? artNetNodes : []
-  const receiveUniverseByNode = new Map<string, number[]>()
-  for (const [address, universes] of Object.entries(dmxData)) {
-    const universeNumbers = Object.keys(universes).map(Number)
-    receiveUniverseByNode.set(address, universeNumbers)
-  }
-  // node が存在しない受信した Universe
-  const missingUniversesByNode = Array.from(receiveUniverseByNode.keys()).filter(
-    address => !nodes.some(node => node.IPAddress === address)
-  )
-
+const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ nodes, onSelectUniverses }) => {
   return (
     <div className="p-4">
       <h2 className="mb-4 text-xl font-bold">ArtNet Nodes</h2>
       <ul>
-        {nodes.map((node: ArtNet.ArtNetNode) => (
-          <li className="mb-2 rounded border border-gray-700 p-2" key={node.IPAddress}>
-            <NodeInfo key={node.IPAddress} node={node} />
-            <NodeUniverseList
-              address={node.IPAddress}
-              universes={receiveUniverseByNode.get(node.IPAddress) || []}
-              onSelectUniverses={onSelectUniverses}
-            />
-          </li>
-        ))}
-        {missingUniversesByNode.map(address => (
-          <li className="mb-2 rounded border border-gray-700 p-2" key={address}>
-            <NodeInfo key={address} node={invalidAddressNode(address)} />
-            <NodeUniverseList
-              address={address}
-              universes={receiveUniverseByNode.get(address) || []}
-              onSelectUniverses={onSelectUniverses}
-            />
+        {nodes.map(node => (
+          <li className="mb-2 rounded border border-gray-700 p-2" key={node.address}>
+            <NodeInfo key={node.address} node={node.info} />
+            <NodeUniverseList address={node.address} universes={node.universes} onSelectUniverses={onSelectUniverses} />
           </li>
         ))}
       </ul>
     </div>
   )
-}
-
-function invalidAddressNode(address: string): ArtNet.ArtNetNode {
-  return {
-    IPAddress: address,
-    ShortName: 'Unknown Node',
-    LongName: 'Unknown Node',
-    NodeReport: '',
-    MacAddress: '00:00:00:00:00:00',
-  }
 }
 
 export default NodeListDisplay
