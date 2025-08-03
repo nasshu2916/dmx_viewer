@@ -13,6 +13,7 @@ export namespace ArtNet {
     Net: number
     Length: number
     Data: DmxValue[]
+    SourceIP: string
   }
 
   export interface ArtNetNode {
