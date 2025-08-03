@@ -1,65 +1,103 @@
-import React from 'react'
+import React, { useMemo, useCallback, useRef } from 'react'
 import UniverseTable from './UniverseTable'
 import { useWebSocket } from '@/contexts/WebSocketContext'
-import { calcColumns, getNextChannelByKey } from './artnetDisplayUtils'
+import { useGridNavigation } from '@/hooks/useGridNavigation'
+import { calcColumns } from './artnetDisplayUtils'
 
 import type { ArtNet } from '@/types/artnet'
 
 interface ArtNetDisplayContainerProps {
-  displayUniverse?: [string, number]
+  // 表示するユニバース [IPアドレス, ユニバース番号]
+  displayUniverse?: readonly [string, number]
+  // 選択中のチャンネル
   selectedChannel: ArtNet.DmxChannel | null
+  // チャンネル選択時のコールバック
   onSelectChannel: (channel: ArtNet.DmxChannel) => void
 }
 
+/**
+ * ArtNet DMXデータを表示するコンテナコンポーネント
+ *
+ * 機能:
+ * - レスポンシブなカラム表示
+ * - キーボードナビゲーション（矢印キー）
+ * - WebSocketからのリアルタイムDMXデータ表示
+ */
 const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
   displayUniverse,
   selectedChannel,
   onSelectChannel,
 }) => {
-  // 横並び数（columns）をContainerで管理
-  const [columns, setColumns] = React.useState(16)
+  // レスポンシブなカラム数の管理（汎用hooks）
   // eslint-disable-next-line no-undef
-  const containerRef = React.useRef<HTMLDivElement>(null)
-
-  const calcColumnsCallback = React.useCallback(() => {
-    const containerWidth = containerRef.current?.clientWidth ?? window.innerWidth
-    const cols = calcColumns(containerWidth)
-    setColumns(cols)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [columns, setColumns] = React.useState(16)
+  React.useEffect(() => {
+    const updateColumns = () => {
+      const containerWidth = containerRef.current?.clientWidth ?? window.innerWidth
+      setColumns(calcColumns(containerWidth))
+    }
+    updateColumns()
+    window.addEventListener('resize', updateColumns)
+    return () => window.removeEventListener('resize', updateColumns)
   }, [])
 
-  React.useEffect(() => {
-    calcColumnsCallback()
-    window.addEventListener('resize', calcColumnsCallback)
-    return () => window.removeEventListener('resize', calcColumnsCallback)
-  }, [calcColumnsCallback])
+  // WebSocketからDMXデータを取得
   const { dmxData } = useWebSocket()
-  const dmxDataForDisplay = Object.fromEntries(
-    Object.entries(dmxData).map(([address, universes]) => [
-      address,
-      Object.fromEntries(
-        Object.entries(universes).map(([universe, obj]) => [
-          Number(universe),
-          { data: obj.data, receivedAt: obj.receivedAt },
-        ])
-      ),
-    ])
+
+  // DMXデータの変換とフィルタリング
+  const { filteredData, universe, maxChannel } = useMemo(() => {
+    // ユニバース情報を取得
+    const addr = displayUniverse?.[0] ?? 'Unknown'
+    const univ = displayUniverse?.[1] ?? 0
+
+    // DMXデータを変換
+    const transformedData = Object.fromEntries(
+      Object.entries(dmxData).map(([address, universes]) => [
+        address,
+        Object.fromEntries(
+          Object.entries(universes as Record<string, { data: ArtNet.DmxValue[]; receivedAt: Date }>).map(
+            ([universe, obj]) => [Number(universe), { data: obj.data, receivedAt: obj.receivedAt }]
+          )
+        ),
+      ])
+    )
+
+    // フィルタされたデータを取得
+    const filtered = transformedData[addr]?.[univ]
+
+    return {
+      filteredData: filtered,
+      address: addr,
+      universe: univ,
+      maxChannel: filtered ? filtered.data.length - 1 : 0,
+    }
+  }, [dmxData, displayUniverse])
+
+  // キーボードナビゲーションの処理（汎用hooks）
+  const { handleKeyDown } = useGridNavigation({
+    currentIndex: selectedChannel ?? 0,
+    rowCount: Math.ceil((maxChannel + 1) / columns),
+    colCount: columns,
+    onMove: idx => onSelectChannel(idx as ArtNet.DmxChannel),
+    isCellValid: idx => idx >= 0 && idx <= maxChannel,
+  })
+
+  const renderWithDmxData = useCallback(
+    (data: { data: ArtNet.DmxValue[]; receivedAt: Date }) => (
+      <UniverseTable
+        columns={columns}
+        data={data.data}
+        receivedAt={data.receivedAt}
+        selectedChannel={selectedChannel}
+        universe={universe}
+        onSelectChannel={onSelectChannel}
+      />
+    ),
+    [columns, selectedChannel, universe, onSelectChannel]
   )
 
-  const address = displayUniverse ? displayUniverse[0] : 'Unknown'
-  const universe = displayUniverse ? displayUniverse[1] : 0
-  const filtered = dmxDataForDisplay[address]?.[universe]
-
-  const maxChannel = filtered ? filtered.data.length - 1 : 0
-
-  // キー移動
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (selectedChannel === null) return
-    const newChannel = getNextChannelByKey(e.key, selectedChannel, columns, maxChannel)
-    if (newChannel !== null) {
-      e.preventDefault()
-      onSelectChannel(newChannel)
-    }
-  }
+  const renderWithoutDmxData = useCallback(() => <p className="text-dmx-text-light">Waiting for ArtNet data...</p>, [])
 
   return (
     <div
@@ -69,18 +107,7 @@ const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      {filtered === undefined ? (
-        <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
-      ) : (
-        <UniverseTable
-          columns={columns}
-          data={filtered.data}
-          receivedAt={filtered.receivedAt}
-          selectedChannel={selectedChannel}
-          universe={universe}
-          onSelectChannel={onSelectChannel}
-        />
-      )}
+      {filteredData === undefined ? renderWithoutDmxData() : renderWithDmxData(filteredData)}
     </div>
   )
 }

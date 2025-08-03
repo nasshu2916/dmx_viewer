@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcColumns, getNextChannelByKey } from './artnetDisplayUtils'
+import { calcColumns } from './artnetDisplayUtils'
 
 describe('calcColumns', () => {
   it('returns 2 when containerWidth is just enough for 2 cells', () => {
@@ -23,36 +23,5 @@ describe('calcColumns', () => {
   })
   it('returns 2^N only', () => {
     expect([1, 2, 4, 8, 16, 32]).toContain(calcColumns(1000, 48))
-  })
-})
-
-describe('getNextChannelByKey', () => {
-  const maxChannel = 511
-  it('ArrowUp: moves up a row', () => {
-    expect(getNextChannelByKey('ArrowUp', 20, 8, maxChannel)).toBe(12)
-  })
-  it('ArrowDown: moves down a row', () => {
-    expect(getNextChannelByKey('ArrowDown', 20, 8, maxChannel)).toBe(28)
-  })
-  it('ArrowLeft: moves left a column', () => {
-    expect(getNextChannelByKey('ArrowLeft', 20, 8, maxChannel)).toBe(19)
-  })
-  it('ArrowRight: moves right a column', () => {
-    expect(getNextChannelByKey('ArrowRight', 20, 8, maxChannel)).toBe(21)
-  })
-  it('ArrowUp at top row returns null', () => {
-    expect(getNextChannelByKey('ArrowUp', 3, 8, maxChannel)).toBeNull()
-  })
-  it('ArrowLeft at leftmost column returns null', () => {
-    expect(getNextChannelByKey('ArrowLeft', 16, 8, maxChannel)).toBeNull()
-  })
-  it('ArrowDown at last row returns null', () => {
-    expect(getNextChannelByKey('ArrowDown', 504, 8, maxChannel)).toBeNull()
-  })
-  it('ArrowRight at rightmost column returns null', () => {
-    expect(getNextChannelByKey('ArrowRight', 23, 8, maxChannel)).toBeNull()
-  })
-  it('Unknown key returns null', () => {
-    expect(getNextChannelByKey('a', 20, 8, maxChannel)).toBeNull()
   })
 })
