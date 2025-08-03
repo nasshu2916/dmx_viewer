@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcColumns, getNextChannelByKey } from './ArtNetDisplayContainer'
+import { calcColumns, getNextChannelByKey } from './artnetDisplayUtils'
 
 describe('calcColumns', () => {
   it('returns 2 when containerWidth is just enough for 2 cells', () => {
