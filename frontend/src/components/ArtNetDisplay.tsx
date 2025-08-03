@@ -3,19 +3,25 @@ import DmxChannelCell from './DmxChannelCell'
 import type { ArtNet } from '@/types/artnet'
 
 interface ArtNetDisplayProps {
-  dmxData: Record<string, Record<number, ArtNet.DmxValue[]>>
+  dmxData: Record<string, Record<number, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
   displayUniverse?: [string, number] | undefined
 }
 
 interface UniverseTableProps {
   universe: number
   data: ArtNet.DmxValue[]
+  receivedAt?: Date
 }
 
-const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data }) => {
+const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data, receivedAt }) => {
   return (
     <div className="mb-4 rounded-lg bg-dmx-light-bg p-4 shadow-lg">
-      <h4 className="mb-2 text-lg font-bold text-dmx-text-light">Universe: {universe}</h4>
+      <h4 className="mb-2 flex text-lg font-bold text-dmx-text-light">
+        Universe: {universe}
+        {receivedAt && (
+          <span className="ml-auto text-sm text-dmx-text-gray">receivedAt: {receivedAt.toLocaleString()}</span>
+        )}
+      </h4>
       <div className="overflow-x-auto">
         <table className="w-full min-w-full table-fixed border-collapse text-dmx-text-light">
           <tbody>
@@ -47,14 +53,14 @@ const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data }) => {
 const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({ dmxData, displayUniverse }) => {
   const address = displayUniverse ? displayUniverse[0] : 'Unknown'
   const universe = displayUniverse ? displayUniverse[1] : 0
-  const filteredDmxData = dmxData[address]?.[universe]
+  const filtered = dmxData[address]?.[universe]
 
   return (
     <div>
-      {filteredDmxData === undefined ? (
+      {filtered === undefined ? (
         <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
       ) : (
-        <UniverseTable data={filteredDmxData} universe={universe} />
+        <UniverseTable data={filtered.data} receivedAt={filtered.receivedAt} universe={universe} />
       )}
     </div>
   )

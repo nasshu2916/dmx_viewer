@@ -13,7 +13,7 @@ export interface WebSocketManager {
   isConnected: boolean
 
   // Data store properties (flattened)
-  dmxData: Record<string, Record<ArtNet.Universe, ArtNet.DmxValue[]>>
+  dmxData: Record<string, Record<ArtNet.Universe, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
   serverMessages: ServerMessage[]
   artNetNodes: ArtNet.ArtNetNode[]
 
@@ -49,9 +49,10 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
     const messageHandlers: MessageHandler = {
       onArtNetDmxPacket: (packet: ArtNet.ArtDMXPacket) => {
         const universe: ArtNet.Universe = getUniverse(packet)
-        const dmxValues = Array.from(packet.Data) as ArtNet.DmxValue[]
-        const address = packet.SourceIP ?? 'unknown'
-        artNetStore.updateDmxData(address, universe, dmxValues)
+        const dmxValues: ArtNet.DmxValue[] = Array.from(packet.Data)
+        const address: string = packet.SourceIP ?? 'unknown'
+        const receivedAt: Date = new Date(Date.now())
+        artNetStore.updateDmxData(address, universe, dmxValues, receivedAt)
       },
       onServerMessage: message => {
         artNetStore.addServerMessage(message)

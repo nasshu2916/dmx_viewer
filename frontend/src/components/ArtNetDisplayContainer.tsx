@@ -8,7 +8,18 @@ interface ArtNetDisplayContainerProps {
 
 const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({ displayUniverse }) => {
   const { dmxData } = useWebSocket()
-  return <ArtNetDisplay displayUniverse={displayUniverse} dmxData={dmxData} />
+  const dmxDataForDisplay = Object.fromEntries(
+    Object.entries(dmxData).map(([address, universes]) => [
+      address,
+      Object.fromEntries(
+        Object.entries(universes).map(([universe, obj]) => [
+          Number(universe),
+          { data: obj.data, receivedAt: obj.receivedAt },
+        ])
+      ),
+    ])
+  )
+  return <ArtNetDisplay displayUniverse={displayUniverse} dmxData={dmxDataForDisplay} />
 }
 
 export default ArtNetDisplayContainer
