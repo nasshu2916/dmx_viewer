@@ -2,7 +2,8 @@ import type { IntRange } from 'type-fest'
 
 export namespace ArtNet {
   export type UniverseData = Record<Universe, DmxValue[]>
-  export type Universe = IntRange<0, 0xffff>
+  /** Universe: 0〜65535 の範囲の number */
+  export type Universe = number
   export type DmxChannel = IntRange<0, 511>
   export type DmxValue = IntRange<0, 255>
 

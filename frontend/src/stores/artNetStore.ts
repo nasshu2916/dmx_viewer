@@ -4,12 +4,12 @@ import type { ServerMessage } from '@/types/websocket'
 
 export interface ArtNetStore {
   // State
-  dmxData: Record<string, Record<number, ArtNet.DmxValue[]>>
+  dmxData: Record<string, Record<ArtNet.Universe, ArtNet.DmxValue[]>>
   serverMessages: ServerMessage[]
   artNetNodes: ArtNet.ArtNetNode[]
 
   // Actions
-  updateDmxData: (address: string, universe: number, data: ArtNet.DmxValue[]) => void
+  updateDmxData: (address: string, universe: ArtNet.Universe, data: ArtNet.DmxValue[]) => void
   addServerMessage: (message: ServerMessage) => void
   setServerMessages: (messages: ServerMessage[]) => void
   setArtNetNodes: (nodes: ArtNet.ArtNetNode[]) => void
@@ -17,11 +17,11 @@ export interface ArtNetStore {
 }
 
 export const useArtNetStore = (): ArtNetStore => {
-  const [dmxData, setDmxData] = useState<Record<string, Record<number, ArtNet.DmxValue[]>>>({})
+  const [dmxData, setDmxData] = useState<Record<string, Record<ArtNet.Universe, ArtNet.DmxValue[]>>>({})
   const [serverMessages, setServerMessages] = useState<ServerMessage[]>([])
   const [artNetNodes, setArtNetNodes] = useState<ArtNet.ArtNetNode[]>([])
 
-  const updateDmxData = useCallback((address: string, universe: number, data: ArtNet.DmxValue[]) => {
+  const updateDmxData = useCallback((address: string, universe: ArtNet.Universe, data: ArtNet.DmxValue[]) => {
     setDmxData(prevData => ({
       ...prevData,
       [address]: {
@@ -50,7 +50,7 @@ export const useArtNetStore = (): ArtNetStore => {
   }, [])
 
   const clearData = useCallback(() => {
-    setDmxData({} as Record<string, Record<number, ArtNet.DmxValue[]>>)
+    setDmxData({} as Record<string, Record<ArtNet.Universe, ArtNet.DmxValue[]>>)
     setServerMessages([])
     setArtNetNodes([])
   }, [])

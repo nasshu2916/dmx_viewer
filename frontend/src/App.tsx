@@ -5,12 +5,13 @@ import TimeDisplayContainer from './components/TimeDisplayContainer'
 import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
+import type { ArtNet } from '@/types/artnet'
 
 function App() {
   const { isConnected, serverMessages } = useWebSocket()
-  const [selectedUniverse, setSelectedUniverse] = useState<[string, number] | undefined>(undefined)
+  const [selectedUniverse, setSelectedUniverse] = useState<[string, ArtNet.Universe] | undefined>(undefined)
 
-  const handleUniverseSelection = (address: string, universe: number) => {
+  const handleUniverseSelection = (address: string, universe: ArtNet.Universe) => {
     setSelectedUniverse([address, universe])
   }
 

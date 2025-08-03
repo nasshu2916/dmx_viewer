@@ -3,6 +3,7 @@ import { WebSocketService, type WebSocketConfig } from './WebSocketService'
 import { MessageRouter, type MessageHandler } from './MessageRouter'
 import { useArtNetStore, type ArtNetStore } from '@/stores'
 import type { ArtNet } from '@/types/artnet'
+import { getUniverse } from '@/service/artnet'
 import type { ServerMessage } from '@/types/websocket'
 
 const DefaultSubscribeTopics = ['artnet/dmx_packet', 'artnet/nodes']
@@ -12,7 +13,7 @@ export interface WebSocketManager {
   isConnected: boolean
 
   // Data store properties (flattened)
-  dmxData: Record<string, Record<number, ArtNet.DmxValue[]>>
+  dmxData: Record<string, Record<ArtNet.Universe, ArtNet.DmxValue[]>>
   serverMessages: ServerMessage[]
   artNetNodes: ArtNet.ArtNetNode[]
 
@@ -47,7 +48,7 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
     // Set up message handlers
     const messageHandlers: MessageHandler = {
       onArtNetDmxPacket: (packet: ArtNet.ArtDMXPacket) => {
-        const universe = (packet.Net << 8) | packet.SubUni
+        const universe: ArtNet.Universe = getUniverse(packet)
         const dmxValues = Array.from(packet.Data) as ArtNet.DmxValue[]
         const address = packet.SourceIP ?? 'unknown'
         artNetStore.updateDmxData(address, universe, dmxValues)

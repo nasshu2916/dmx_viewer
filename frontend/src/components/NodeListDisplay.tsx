@@ -5,18 +5,18 @@ import type { NodeListDisplayNode } from './NodeListDisplayContainer'
 
 interface NodeListDisplayProps {
   nodes: NodeListDisplayNode[]
-  onSelectUniverses: (address: string, selected: number) => void
+  onSelectUniverses: (address: string, selected: ArtNet.Universe) => void
 }
 
 interface NodeUniverseListProps {
   address: string
-  universes: number[]
-  onSelectUniverses: (address: string, selected: number) => void
+  universes: ArtNet.Universe[]
+  onSelectUniverses: (address: string, selected: ArtNet.Universe) => void
 }
 
 const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes, onSelectUniverses }) => {
-  const [selectedUniverse, setSelectedUniverse] = useState<[string, number] | undefined>(undefined)
-  const handleRadioChange = (address: string, universe: number) => {
+  const [selectedUniverse, setSelectedUniverse] = useState<[string, ArtNet.Universe] | undefined>(undefined)
+  const handleRadioChange = (address: string, universe: ArtNet.Universe) => {
     setSelectedUniverse([address, universe])
     onSelectUniverses(address, universe)
   }

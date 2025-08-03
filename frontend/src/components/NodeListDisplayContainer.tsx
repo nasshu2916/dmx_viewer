@@ -6,20 +6,20 @@ import type { ArtNet } from '@/types/artnet'
 export type NodeListDisplayNode = {
   address: string
   info: ArtNet.ArtNetNode
-  universes: number[]
+  universes: ArtNet.Universe[]
   isUnknown: boolean
 }
 
 interface NodeListDisplayContainerProps {
-  onSelectUniverses: (address: string, selected: number) => void
+  onSelectUniverses: (address: string, selected: ArtNet.Universe) => void
 }
 
 const NodeListDisplayContainer: React.FC<NodeListDisplayContainerProps> = ({ onSelectUniverses }) => {
   const { artNetNodes, dmxData } = useWebSocket()
   const nodes = Array.isArray(artNetNodes) ? artNetNodes : []
-  const receiveUniverseByNode = new Map<string, number[]>()
+  const receiveUniverseByNode = new Map<string, ArtNet.Universe[]>()
   for (const [address, universes] of Object.entries(dmxData)) {
-    const universeNumbers = Object.keys(universes).map(Number)
+    const universeNumbers: ArtNet.Universe[] = Object.keys(universes).map(Number) as ArtNet.Universe[]
     receiveUniverseByNode.set(address, universeNumbers)
   }
   // ノードが存在しないがdmxDataにだけ存在するアドレス
