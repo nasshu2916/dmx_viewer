@@ -7,6 +7,11 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  overflow: hidden;
+}
+
+.App {
+  overflow: hidden;
 }
 
 body {
@@ -32,4 +37,5 @@ body {
 .App-main-content {
   flex-grow: 1;
   padding: 1rem;
+  min-height: 0;
 }
