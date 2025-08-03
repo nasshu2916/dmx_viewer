@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
-const TimeDisplay: React.FC = () => {
-  const [baseTime, setBaseTime] = useState<Date | null>(null)
-  const [baseLocal, setBaseLocal] = useState<number | null>(null)
-  const [time, setTime] = useState(new Date())
+interface TimeDisplayProps {
+  time: Date
+  onReload: () => void
+}
 
+const TimeDisplay: React.FC<TimeDisplayProps> = ({ time, onReload }) => {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('ja-JP', {
       hour: '2-digit',
@@ -15,40 +16,12 @@ const TimeDisplay: React.FC = () => {
     })
   }
 
-  const getAdjustedTime = () => {
-    if (baseTime && baseLocal) {
-      return new Date(baseTime.getTime() + (Date.now() - baseLocal))
-    } else {
-      return new Date()
-    }
-  }
-
-  const fetchServerTime = async () => {
-    const res = await fetch('/api/time')
-    if (!res.ok) {
-      console.warn('サーバから時刻を取得できませんでした')
-      return
-    }
-    const data = await res.json()
-    const ntpDate = new Date(data.datetime)
-    setBaseTime(ntpDate)
-    setBaseLocal(Date.now())
-    setTime(ntpDate)
-  }
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(getAdjustedTime())
-    }, 100)
-    return () => clearInterval(timer)
-  }, [baseTime, baseLocal])
-
   return (
     <div className="flex items-center space-x-2 p-2 text-dmx-text-light">
       <span className="m-0 text-lg">{formatTime(time)}</span>
       <button
         className="flex cursor-pointer rounded bg-transparent p-2 text-dmx-text-light hover:bg-white/10"
-        onClick={fetchServerTime}
+        onClick={onReload}
       >
         <svg
           className="lucide lucide-rotate-cw h-4 w-4"

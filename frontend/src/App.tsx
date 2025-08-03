@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import ArtNetDisplay from './components/ArtNetDisplay'
-import TimeDisplay from './components/TimeDisplay'
+import TimeDisplayContainer from './components/TimeDisplayContainer'
 import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplay from './components/NodeListDisplay'
 import { useWebSocket } from '@/contexts/WebSocketContext'
@@ -19,7 +19,7 @@ function App() {
       <header className="App-header flex items-center justify-between bg-dmx-medium-bg p-4 shadow-md">
         <h1 className="text-2xl font-bold text-dmx-text-light">DMX Viewer</h1>
         <div className="flex items-center space-x-4">
-          <TimeDisplay />
+          <TimeDisplayContainer />
           <WebSocketStatusIndicator isConnected={isConnected} />
         </div>
       </header>
