@@ -3,8 +3,8 @@ import DmxChannelCell from './DmxChannelCell'
 import type { ArtNet } from '@/types/artnet'
 
 interface ArtNetDisplayProps {
-  dmxData: Record<number, ArtNet.DmxValue[]>
-  displayUniverse?: number
+  dmxData: Record<string, Record<number, ArtNet.DmxValue[]>>
+  displayUniverse?: [string, number] | undefined
 }
 
 interface UniverseTableProps {
@@ -45,14 +45,16 @@ const UniverseTable: React.FC<UniverseTableProps> = ({ universe, data }) => {
 }
 
 const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({ dmxData, displayUniverse }) => {
-  const filteredDmxData = displayUniverse !== undefined ? dmxData[displayUniverse] : undefined
+  const address = displayUniverse ? displayUniverse[0] : 'Unknown'
+  const universe = displayUniverse ? displayUniverse[1] : 0
+  const filteredDmxData = dmxData[address]?.[universe]
 
   return (
     <div>
       {filteredDmxData === undefined ? (
         <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
       ) : (
-        <UniverseTable data={filteredDmxData} key={displayUniverse} universe={displayUniverse as number} />
+        <UniverseTable data={filteredDmxData} universe={universe} />
       )}
     </div>
   )

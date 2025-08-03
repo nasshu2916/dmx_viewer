@@ -22,6 +22,6 @@ export namespace ArtNet {
     LongName: string
     NodeReport: string
     MacAddress: string
-    LastSeen: string
+    LastSeen?: string
   }
 }
