@@ -2,27 +2,16 @@ import React from 'react'
 import DmxChannelCell from './DmxChannelCell'
 import type { ArtNet } from '@/types/artnet'
 
-interface ArtNetDisplayProps {
-  dmxData: Record<string, Record<number, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
-  displayUniverse?: [string, number] | undefined
-  selectedChannel: ArtNet.DmxChannel | null
-  onSelectChannel: (channel: ArtNet.DmxChannel) => void
-  columns: number
-}
-
 interface UniverseTableProps {
   universe: number
   data: ArtNet.DmxValue[]
   receivedAt?: Date
-}
-
-interface UniverseTableSelectableProps extends UniverseTableProps {
   selectedChannel: ArtNet.DmxChannel | null
   onSelectChannel: (channel: ArtNet.DmxChannel) => void
   columns: number
 }
 
-const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
+const UniverseTable: React.FC<UniverseTableProps> = ({
   universe,
   data,
   receivedAt,
@@ -76,33 +65,4 @@ const UniverseTable: React.FC<UniverseTableSelectableProps> = ({
   )
 }
 
-const ArtNetDisplay: React.FC<ArtNetDisplayProps> = ({
-  dmxData,
-  displayUniverse,
-  selectedChannel,
-  onSelectChannel,
-  columns,
-}) => {
-  const address = displayUniverse ? displayUniverse[0] : 'Unknown'
-  const universe = displayUniverse ? displayUniverse[1] : 0
-  const filtered = dmxData[address]?.[universe]
-
-  return (
-    <div>
-      {filtered === undefined ? (
-        <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
-      ) : (
-        <UniverseTable
-          columns={columns}
-          data={filtered.data}
-          receivedAt={filtered.receivedAt}
-          selectedChannel={selectedChannel}
-          universe={universe}
-          onSelectChannel={onSelectChannel}
-        />
-      )}
-    </div>
-  )
-}
-
-export default ArtNetDisplay
+export default UniverseTable

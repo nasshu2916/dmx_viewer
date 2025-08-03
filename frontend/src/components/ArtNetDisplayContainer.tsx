@@ -1,5 +1,5 @@
 import React from 'react'
-import ArtNetDisplay from './ArtNetDisplay'
+import UniverseTable from './UniverseTable'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 
 import type { ArtNet } from '@/types/artnet'
@@ -111,10 +111,15 @@ const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
     ])
   )
 
+  const address = displayUniverse ? displayUniverse[0] : 'Unknown'
+  const universe = displayUniverse ? displayUniverse[1] : 0
+  const filtered = dmxDataForDisplay[address]?.[universe]
+
+  const maxChannel = filtered ? filtered.data.length - 1 : 0
+
   // キー移動
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (selectedChannel === null) return
-    const maxChannel = 511
     const newChannel = getNextChannelByKey(e.key, selectedChannel, columns, maxChannel)
     if (newChannel !== null) {
       e.preventDefault()
@@ -130,13 +135,18 @@ const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <ArtNetDisplay
-        columns={columns}
-        displayUniverse={displayUniverse}
-        dmxData={dmxDataForDisplay}
-        selectedChannel={selectedChannel}
-        onSelectChannel={onSelectChannel}
-      />
+      {filtered === undefined ? (
+        <p className="text-dmx-text-light">Waiting for ArtNet data...</p>
+      ) : (
+        <UniverseTable
+          columns={columns}
+          data={filtered.data}
+          receivedAt={filtered.receivedAt}
+          selectedChannel={selectedChannel}
+          universe={universe}
+          onSelectChannel={onSelectChannel}
+        />
+      )}
     </div>
   )
 }
