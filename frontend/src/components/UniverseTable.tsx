@@ -1,3 +1,4 @@
+/* global HTMLTableCellElement, ScrollIntoViewOptions */
 import React from 'react'
 import DmxChannelCell from './DmxChannelCell'
 import type { ArtNet } from '@/types/artnet'
@@ -19,6 +20,17 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
   onSelectChannel,
   columns,
 }) => {
+  const selectedCellRef = React.useRef<
+    null | (HTMLTableCellElement & { scrollIntoView: (options?: ScrollIntoViewOptions) => void })
+  >(null)
+
+  React.useEffect(() => {
+    // テストやSSR環境で current が null の場合も考慮
+    if (selectedCellRef.current && typeof selectedCellRef.current.scrollIntoView === 'function') {
+      selectedCellRef.current.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    }
+  }, [selectedChannel])
+
   const length = data.length
   const rows = Math.ceil(length / columns)
 
@@ -44,11 +56,12 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
                     const channel = (rowStartChannel + colIdx) as ArtNet.DmxChannel
                     if (channel >= length) return <td key={`empty-${universe}-${channel}`} />
                     const value = (data[channel] ?? 0) as ArtNet.DmxValue
+                    const isSelected = selectedChannel === channel
                     return (
-                      <td key={`channel-${universe}-${channel}`}>
+                      <td key={`channel-${universe}-${channel}`} ref={isSelected ? selectedCellRef : undefined}>
                         <DmxChannelCell
                           channel={channel}
-                          selected={selectedChannel === channel}
+                          selected={isSelected}
                           value={value}
                           onClick={() => onSelectChannel(channel)}
                         />
