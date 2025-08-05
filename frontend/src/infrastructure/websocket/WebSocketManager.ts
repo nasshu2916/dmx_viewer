@@ -4,18 +4,12 @@ import { MessageRouter, type MessageHandler } from './MessageRouter'
 import { useArtNetStore, type ArtNetStore } from '@/stores'
 import type { ArtNet } from '@/types/artnet'
 import { getUniverse } from '@/service/artnet'
-import type { ServerMessage } from '@/types/websocket'
 
 const DefaultSubscribeTopics = ['artnet/dmx_packet', 'artnet/nodes']
 
 export interface WebSocketManager {
   // Connection state
   isConnected: boolean
-
-  // Data store properties (flattened)
-  dmxData: Record<string, Record<ArtNet.Universe, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
-  serverMessages: ServerMessage[]
-  artNetNodes: ArtNet.ArtNetNode[]
 
   // Art-Net data store (for internal use)
   artNetStore: ArtNetStore
@@ -118,9 +112,6 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
 
   return {
     isConnected,
-    dmxData: artNetStore.dmxData,
-    serverMessages: artNetStore.serverMessages,
-    artNetNodes: artNetStore.artNetNodes,
     artNetStore,
     sendMessage,
     subscribe,

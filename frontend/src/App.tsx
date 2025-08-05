@@ -7,10 +7,12 @@ import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { useArtNetStore } from '@/stores/artNetStore'
 import { useDmxHistory } from './hooks/useDmxHistory'
 
 function App() {
-  const { isConnected, serverMessages, dmxData } = useWebSocket()
+  const { isConnected } = useWebSocket()
+  const { serverMessages, dmxData } = useArtNetStore()
   const { selectedUniverse, selectedChannel } = useSelectionStore()
 
   const dmxValue = useMemo(() => {

@@ -1,8 +1,8 @@
 import React, { useMemo, useCallback, useRef } from 'react'
 import UniverseTable from './UniverseTable'
-import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useGridNavigation } from '@/hooks/useGridNavigation'
 import { useSelectionStore } from '@/stores/selectionStore'
+import { useArtNetStore } from '@/stores/artNetStore'
 import { calcColumns } from './artnetDisplayUtils'
 
 import type { ArtNet } from '@/types/artnet'
@@ -32,7 +32,7 @@ const ArtNetDisplayContainer: React.FC = () => {
   }, [])
 
   // WebSocketからDMXデータを取得
-  const { dmxData } = useWebSocket()
+  const { dmxData } = useArtNetStore()
 
   // DMXデータの変換とフィルタリング
   const { filteredData, universe, maxChannel } = useMemo(() => {
