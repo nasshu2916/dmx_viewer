@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { create } from 'zustand'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
 
@@ -16,58 +16,46 @@ export interface ArtNetStore {
   clearData: () => void
 }
 
-export const useArtNetStore = (): ArtNetStore => {
-  const [dmxData, setDmxData] = useState<
-    Record<string, Record<ArtNet.Universe, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
-  >({})
-  const [serverMessages, setServerMessages] = useState<ServerMessage[]>([])
-  const [artNetNodes, setArtNetNodes] = useState<ArtNet.ArtNetNode[]>([])
+export const useArtNetStore = create<ArtNetStore>(set => ({
+  dmxData: {},
+  serverMessages: [],
+  artNetNodes: [],
 
-  const updateDmxData = useCallback(
-    (address: string, universe: ArtNet.Universe, data: ArtNet.DmxValue[], receivedAt: Date) => {
-      setDmxData(prevData => ({
-        ...prevData,
+  updateDmxData: (address, universe, data, receivedAt) => {
+    set(state => ({
+      dmxData: {
+        ...state.dmxData,
         [address]: {
-          ...(prevData[address] || {}),
+          ...(state.dmxData[address] || {}),
           [universe]: { data, receivedAt },
         },
-      }))
-    },
-    []
-  )
+      },
+    }))
+  },
 
-  const addServerMessage = useCallback((message: ServerMessage) => {
-    setServerMessages(prevMessages => {
-      // Prevent duplicate messages based on timestamp
+  addServerMessage: message => {
+    set(state => {
+      const prevMessages = state.serverMessages
       if (prevMessages.length > 0 && prevMessages[prevMessages.length - 1].Timestamp === message.Timestamp) {
-        return prevMessages
+        return { serverMessages: prevMessages }
       }
-      return [...prevMessages, message]
+      return { serverMessages: [...prevMessages, message] }
     })
-  }, [])
+  },
 
-  const setServerMessagesCallback = useCallback((messages: ServerMessage[]) => {
-    setServerMessages(messages)
-  }, [])
+  setServerMessages: messages => {
+    set({ serverMessages: messages })
+  },
 
-  const setArtNetNodesCallback = useCallback((nodes: ArtNet.ArtNetNode[]) => {
-    setArtNetNodes(nodes)
-  }, [])
+  setArtNetNodes: nodes => {
+    set({ artNetNodes: nodes })
+  },
 
-  const clearData = useCallback(() => {
-    setDmxData({} as Record<string, Record<ArtNet.Universe, { data: ArtNet.DmxValue[]; receivedAt: Date }>>)
-    setServerMessages([])
-    setArtNetNodes([])
-  }, [])
-
-  return {
-    dmxData,
-    serverMessages,
-    artNetNodes,
-    updateDmxData,
-    addServerMessage,
-    setServerMessages: setServerMessagesCallback,
-    setArtNetNodes: setArtNetNodesCallback,
-    clearData,
-  }
-}
+  clearData: () => {
+    set({
+      dmxData: {},
+      serverMessages: [],
+      artNetNodes: [],
+    })
+  },
+}))

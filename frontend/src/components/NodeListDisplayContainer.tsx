@@ -1,7 +1,7 @@
 import React from 'react'
 import NodeListDisplay from './NodeListDisplay'
-import { useWebSocket } from '@/contexts/WebSocketContext'
 import type { ArtNet } from '@/types/artnet'
+import { useArtNetStore } from '@/stores'
 
 export type NodeListDisplayNode = {
   address: string
@@ -11,8 +11,7 @@ export type NodeListDisplayNode = {
 }
 
 const NodeListDisplayContainer: React.FC = () => {
-  const { artNetNodes, dmxData } = useWebSocket()
-  const nodes = Array.isArray(artNetNodes) ? artNetNodes : []
+  const { artNetNodes, dmxData } = useArtNetStore()
   const receiveUniverseByNode = new Map<string, ArtNet.Universe[]>()
   for (const [address, universes] of Object.entries(dmxData)) {
     const universeNumbers: ArtNet.Universe[] = Object.keys(universes).map(Number) as ArtNet.Universe[]
@@ -20,12 +19,12 @@ const NodeListDisplayContainer: React.FC = () => {
   }
   // ノードが存在しないがdmxDataにだけ存在するアドレス
   const missingAddresses = Array.from(receiveUniverseByNode.keys()).filter(
-    address => !nodes.some(node => node.IPAddress === address)
+    address => !artNetNodes.some(node => node.IPAddress === address)
   )
 
   const displayNodes: NodeListDisplayNode[] = React.useMemo(
     () => [
-      ...nodes.map(node => ({
+      ...artNetNodes.map(node => ({
         address: node.IPAddress,
         info: node,
         universes: receiveUniverseByNode.get(node.IPAddress) || [],
@@ -38,7 +37,7 @@ const NodeListDisplayContainer: React.FC = () => {
         isUnknown: true,
       })),
     ],
-    [nodes, receiveUniverseByNode, missingAddresses]
+    [artNetNodes, receiveUniverseByNode, missingAddresses]
   )
 
   return <NodeListDisplay nodes={displayNodes} />
