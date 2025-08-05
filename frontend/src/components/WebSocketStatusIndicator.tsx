@@ -4,7 +4,7 @@ interface WebSocketStatusIndicatorProps {
   isConnected: boolean
 }
 
-const WebSocketStatusIndicator: React.FC<WebSocketStatusIndicatorProps> = ({ isConnected }) => {
+const WebSocketStatusIndicator: React.FC<WebSocketStatusIndicatorProps> = React.memo(({ isConnected }) => {
   const statusColor = isConnected ? 'bg-green-500' : 'bg-red-500'
   const statusText = isConnected ? 'Connected' : 'Disconnected'
 
@@ -14,6 +14,6 @@ const WebSocketStatusIndicator: React.FC<WebSocketStatusIndicatorProps> = ({ isC
       <span className="text-sm text-dmx-text-gray">{`WebSocket: ${statusText}`}</span>
     </div>
   )
-}
+})
 
 export default WebSocketStatusIndicator

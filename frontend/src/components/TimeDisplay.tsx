@@ -1,24 +1,14 @@
 import React from 'react'
 
 interface TimeDisplayProps {
-  time: Date
+  formatTime: string
   onReload: () => void
 }
 
-const TimeDisplay: React.FC<TimeDisplayProps> = ({ time, onReload }) => {
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-      timeZoneName: 'short',
-    })
-  }
-
+const TimeDisplay: React.FC<TimeDisplayProps> = React.memo(({ formatTime, onReload }) => {
   return (
     <div className="flex items-center space-x-2 p-2 text-dmx-text-light">
-      <span className="m-0 text-lg">{formatTime(time)}</span>
+      <span className="m-0 text-lg">{formatTime}</span>
       <button
         className="flex cursor-pointer rounded bg-transparent p-2 text-dmx-text-light hover:bg-white/10"
         onClick={onReload}
@@ -37,6 +27,6 @@ const TimeDisplay: React.FC<TimeDisplayProps> = ({ time, onReload }) => {
       </button>
     </div>
   )
-}
+})
 
 export default TimeDisplay

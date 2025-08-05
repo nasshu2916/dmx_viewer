@@ -67,6 +67,8 @@
 - Propsはshorthand→callbackの順で並べる
 - TailwindCSS（`dmx-` prefixカスタム）
 - エラーハンドリング: try-catch＋console.warn（致命的でない場合）
+- パフォーマンスを意識し、不要な再レンダリングを極力抑える
+  - useMemo, useCallback, React.memo などを適切に活用する
 
 ---
 

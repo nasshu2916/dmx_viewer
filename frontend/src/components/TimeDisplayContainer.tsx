@@ -1,10 +1,20 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import TimeDisplay from './TimeDisplay'
 
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  })
+}
+
 const TimeDisplayContainer: React.FC = () => {
   const [baseTime, setBaseTime] = useState<Date | null>(null)
   const [baseLocal, setBaseLocal] = useState<number | null>(null)
-  const [time, setTime] = useState(new Date())
+  const [timeText, setTime] = useState<string>(formatTime(new Date()))
 
   const getAdjustedTime = useCallback(() => {
     if (baseTime && baseLocal) {
@@ -24,17 +34,17 @@ const TimeDisplayContainer: React.FC = () => {
     const ntpDate = new Date(data.datetime)
     setBaseTime(ntpDate)
     setBaseLocal(Date.now())
-    setTime(ntpDate)
+    setTime(formatTime(ntpDate))
   }, [])
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTime(getAdjustedTime())
+      setTime(formatTime(getAdjustedTime()))
     }, 100)
     return () => clearInterval(timer)
   }, [getAdjustedTime])
 
-  return <TimeDisplay time={time} onReload={fetchServerTime} />
+  return <TimeDisplay formatTime={timeText} onReload={fetchServerTime} />
 }
 
-export default TimeDisplayContainer
+export default React.memo(TimeDisplayContainer)
