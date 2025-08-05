@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
+import { SelectionProvider, useSelection } from '@/contexts/SelectionContext'
 import './App.css'
 import ArtNetDisplayContainer from './components/ArtNetDisplayContainer'
 import TimeDisplayContainer from './components/TimeDisplayContainer'
@@ -6,17 +7,11 @@ import SelectedInfoDisplay from './components/SelectedInfoDisplay'
 import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
-import type { ArtNet } from '@/types/artnet'
 import { useDmxHistory } from './hooks/useDmxHistory'
 
 function App() {
   const { isConnected, serverMessages, dmxData } = useWebSocket()
-  const [selectedUniverse, setSelectedUniverse] = useState<[string, ArtNet.Universe] | undefined>(undefined)
-  const [selectedChannel, setSelectedChannel] = useState<ArtNet.DmxChannel | null>(null)
-
-  const handleUniverseSelection = (address: string, universe: ArtNet.Universe) => {
-    setSelectedUniverse([address, universe])
-  }
+  const { selectedUniverse, selectedChannel } = useSelection()
 
   const dmxValue = useMemo(() => {
     if (!selectedUniverse || selectedChannel === null) return null
@@ -43,14 +38,10 @@ function App() {
       </header>
       <main className="App-main-content flex h-full min-h-0 flex-1 space-x-4 p-4">
         <div className="h-full max-h-full min-h-0 w-1/4 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <NodeListDisplayContainer onSelectUniverses={handleUniverseSelection} />
+          <NodeListDisplayContainer />
         </div>
         <div className="h-full min-h-0 flex-1 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <ArtNetDisplayContainer
-            displayUniverse={selectedUniverse}
-            selectedChannel={selectedChannel}
-            onSelectChannel={setSelectedChannel}
-          />
+          <ArtNetDisplayContainer />{' '}
         </div>
         <div className="h-full max-h-full min-h-0 w-1/4 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Status</h3>
@@ -71,4 +62,10 @@ function App() {
   )
 }
 
-export default App
+const AppWithProvider = () => (
+  <SelectionProvider>
+    <App />
+  </SelectionProvider>
+)
+
+export default AppWithProvider

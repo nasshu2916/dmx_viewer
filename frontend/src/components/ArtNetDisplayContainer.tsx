@@ -1,19 +1,11 @@
 import React, { useMemo, useCallback, useRef } from 'react'
+import { useSelection } from '@/contexts/SelectionContext'
 import UniverseTable from './UniverseTable'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useGridNavigation } from '@/hooks/useGridNavigation'
 import { calcColumns } from './artnetDisplayUtils'
 
 import type { ArtNet } from '@/types/artnet'
-
-interface ArtNetDisplayContainerProps {
-  // 表示するユニバース [IPアドレス, ユニバース番号]
-  displayUniverse?: readonly [string, number]
-  // 選択中のチャンネル
-  selectedChannel: ArtNet.DmxChannel | null
-  // チャンネル選択時のコールバック
-  onSelectChannel: (channel: ArtNet.DmxChannel) => void
-}
 
 /**
  * ArtNet DMXデータを表示するコンテナコンポーネント
@@ -23,11 +15,8 @@ interface ArtNetDisplayContainerProps {
  * - キーボードナビゲーション（矢印キー）
  * - WebSocketからのリアルタイムDMXデータ表示
  */
-const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
-  displayUniverse,
-  selectedChannel,
-  onSelectChannel,
-}) => {
+const ArtNetDisplayContainer: React.FC = () => {
+  const { selectedUniverse: displayUniverse, selectedChannel, setSelectedChannel } = useSelection()
   // レスポンシブなカラム数の管理（汎用hooks）
   // eslint-disable-next-line no-undef
   const containerRef = useRef<HTMLDivElement>(null)
@@ -79,7 +68,7 @@ const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
     currentIndex: selectedChannel ?? 0,
     rowCount: Math.ceil((maxChannel + 1) / columns),
     colCount: columns,
-    onMove: idx => onSelectChannel(idx as ArtNet.DmxChannel),
+    onMove: idx => setSelectedChannel(idx as ArtNet.DmxChannel),
     isCellValid: idx => idx >= 0 && idx <= maxChannel,
   })
 
@@ -91,10 +80,10 @@ const ArtNetDisplayContainer: React.FC<ArtNetDisplayContainerProps> = ({
         receivedAt={data.receivedAt}
         selectedChannel={selectedChannel}
         universe={universe}
-        onSelectChannel={onSelectChannel}
+        onSelectChannel={setSelectedChannel}
       />
     ),
-    [columns, selectedChannel, universe, onSelectChannel]
+    [columns, selectedChannel, universe, setSelectedChannel]
   )
 
   const renderWithoutDmxData = useCallback(() => <p className="text-dmx-text-light">Waiting for ArtNet data...</p>, [])
