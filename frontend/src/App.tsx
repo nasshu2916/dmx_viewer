@@ -47,7 +47,6 @@ function App() {
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Status</h3>
           <SelectedInfoDisplay
             dmxHistory={dmxHistory}
-            dmxValue={dmxValue}
             selectedChannel={selectedChannel}
             selectedUniverse={selectedUniverse}
           />

@@ -7,11 +7,12 @@ import type { SelectedUniverse } from '@/types'
 interface SelectedInfoDisplayProps {
   selectedUniverse?: SelectedUniverse
   selectedChannel: ArtNet.DmxChannel | null
-  dmxValue: number | null
   dmxHistory: DmxHistoryPoint[]
 }
 
-const SelectedInfoDisplay = ({ selectedUniverse, selectedChannel, dmxValue, dmxHistory }: SelectedInfoDisplayProps) => {
+const SelectedInfoDisplay = ({ selectedUniverse, selectedChannel, dmxHistory }: SelectedInfoDisplayProps) => {
+  const dmxValue = dmxHistory.length > 0 ? dmxHistory[dmxHistory.length - 1].value : null
+
   return (
     <div className="space-y-2 text-sm">
       <div>
@@ -28,7 +29,7 @@ const SelectedInfoDisplay = ({ selectedUniverse, selectedChannel, dmxValue, dmxH
       </div>
       <div>
         <span className="font-bold">Dmx Value: </span>
-        {dmxValue !== null && dmxValue !== undefined ? dmxValue : 'None'}
+        {dmxValue != null ? dmxValue : 'None'}
       </div>
       <div className="pt-2">
         <DmxHistoryChart history={dmxHistory} maxLength={100} />
