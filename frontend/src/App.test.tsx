@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 import App from './App'
-import { SelectionProvider } from './contexts/SelectionContext'
 import { describe, it, expect, vi } from 'vitest'
 import { WebSocketProvider } from './contexts/WebSocketContext'
 
@@ -43,11 +42,9 @@ vi.stubGlobal('import', {
 // Helper function to render App with providers
 const renderAppWithProviders = () => {
   return render(
-    <SelectionProvider>
-      <WebSocketProvider>
-        <App />
-      </WebSocketProvider>
-    </SelectionProvider>
+    <WebSocketProvider>
+      <App />
+    </WebSocketProvider>
   )
 }
 

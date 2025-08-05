@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { SelectionProvider, useSelection } from '@/contexts/SelectionContext'
 import './App.css'
 import ArtNetDisplayContainer from './components/ArtNetDisplayContainer'
 import TimeDisplayContainer from './components/TimeDisplayContainer'
@@ -7,11 +6,12 @@ import SelectedInfoDisplay from './components/SelectedInfoDisplay'
 import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
+import { useSelectionStore } from '@/stores/selectionStore'
 import { useDmxHistory } from './hooks/useDmxHistory'
 
 function App() {
   const { isConnected, serverMessages, dmxData } = useWebSocket()
-  const { selectedUniverse, selectedChannel } = useSelection()
+  const { selectedUniverse, selectedChannel } = useSelectionStore()
 
   const dmxValue = useMemo(() => {
     if (!selectedUniverse || selectedChannel === null) return null
@@ -61,10 +61,4 @@ function App() {
   )
 }
 
-const AppWithProvider = () => (
-  <SelectionProvider>
-    <App />
-  </SelectionProvider>
-)
-
-export default AppWithProvider
+export default App

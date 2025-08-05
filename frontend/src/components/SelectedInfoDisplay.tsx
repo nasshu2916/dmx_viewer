@@ -6,7 +6,7 @@ import DmxHistoryChart from './DmxHistoryChart'
 import type { SelectedUniverse } from '@/types'
 
 interface SelectedInfoDisplayProps {
-  selectedUniverse: SelectedUniverse | undefined
+  selectedUniverse: SelectedUniverse | null
   selectedChannel: ArtNet.DmxChannel | null
   dmxHistory: DmxHistoryPoint[]
 }

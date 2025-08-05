@@ -1,7 +1,7 @@
 import React from 'react'
 import type { ArtNet } from '@/types/artnet'
 import type { NodeListDisplayNode } from './NodeListDisplayContainer'
-import { useSelection } from '@/contexts/SelectionContext'
+import { useSelectionStore } from '@/stores/selectionStore'
 
 interface NodeListDisplayProps {
   nodes: NodeListDisplayNode[]
@@ -14,7 +14,7 @@ interface NodeUniverseListProps {
 
 const NodeUniverseList: React.FC<NodeUniverseListProps> = React.memo(
   ({ address, universes }) => {
-    const { selectedUniverse, setSelectedUniverse } = useSelection()
+    const { selectedUniverse, setSelectedUniverse } = useSelectionStore()
 
     const handleRadioChange = (address: string, universe: ArtNet.Universe) => {
       setSelectedUniverse({ address: address, universe: universe })

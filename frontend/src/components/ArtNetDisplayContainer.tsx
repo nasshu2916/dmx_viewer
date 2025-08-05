@@ -1,8 +1,8 @@
 import React, { useMemo, useCallback, useRef } from 'react'
-import { useSelection } from '@/contexts/SelectionContext'
 import UniverseTable from './UniverseTable'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useGridNavigation } from '@/hooks/useGridNavigation'
+import { useSelectionStore } from '@/stores/selectionStore'
 import { calcColumns } from './artnetDisplayUtils'
 
 import type { ArtNet } from '@/types/artnet'
@@ -16,7 +16,7 @@ import type { ArtNet } from '@/types/artnet'
  * - WebSocketからのリアルタイムDMXデータ表示
  */
 const ArtNetDisplayContainer: React.FC = () => {
-  const { selectedUniverse: displayUniverse, selectedChannel, setSelectedChannel } = useSelection()
+  const { selectedUniverse: displayUniverse, selectedChannel, setSelectedChannel } = useSelectionStore()
   // レスポンシブなカラム数の管理（汎用hooks）
   // eslint-disable-next-line no-undef
   const containerRef = useRef<HTMLDivElement>(null)
