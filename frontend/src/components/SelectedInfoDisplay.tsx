@@ -2,8 +2,10 @@ import type { ArtNet } from '@/types/artnet'
 import type { DmxHistoryPoint } from '@/hooks/useDmxHistory'
 import DmxHistoryChart from './DmxHistoryChart'
 
+import type { SelectedUniverse } from '@/types'
+
 interface SelectedInfoDisplayProps {
-  selectedUniverse?: [string, ArtNet.Universe]
+  selectedUniverse?: SelectedUniverse
   selectedChannel: ArtNet.DmxChannel | null
   dmxValue: number | null
   dmxHistory: DmxHistoryPoint[]
@@ -14,11 +16,11 @@ const SelectedInfoDisplay = ({ selectedUniverse, selectedChannel, dmxValue, dmxH
     <div className="space-y-2 text-sm">
       <div>
         <span className="font-bold">Address: </span>
-        {selectedUniverse ? selectedUniverse[0] : 'None'}
+        {selectedUniverse ? selectedUniverse.address : 'None'}{' '}
       </div>
       <div>
         <span className="font-bold">Universe ID: </span>
-        {selectedUniverse ? selectedUniverse[1] : 'None'}
+        {selectedUniverse ? selectedUniverse.universe : 'None'}{' '}
       </div>
       <div>
         <span className="font-bold">Selected Channel: </span>

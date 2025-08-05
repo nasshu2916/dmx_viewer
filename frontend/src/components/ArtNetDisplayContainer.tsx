@@ -37,8 +37,8 @@ const ArtNetDisplayContainer: React.FC = () => {
   // DMXデータの変換とフィルタリング
   const { filteredData, universe, maxChannel } = useMemo(() => {
     // ユニバース情報を取得
-    const addr = displayUniverse?.[0] ?? 'Unknown'
-    const univ = displayUniverse?.[1] ?? 0
+    const addr = displayUniverse?.address ?? 'Unknown'
+    const univ = displayUniverse?.universe ?? 0
 
     // DMXデータを変換
     const transformedData = Object.fromEntries(

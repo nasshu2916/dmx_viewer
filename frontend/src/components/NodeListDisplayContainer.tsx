@@ -41,7 +41,7 @@ const NodeListDisplayContainer: React.FC = () => {
   ]
 
   const handleSelectUniverses = (address: string, selected: ArtNet.Universe) => {
-    setSelectedUniverse([address, selected])
+    setSelectedUniverse({ address, universe: selected })
   }
   return <NodeListDisplay nodes={displayNodes} onSelectUniverses={handleSelectUniverses} />
 }

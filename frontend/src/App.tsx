@@ -15,18 +15,18 @@ function App() {
 
   const dmxValue = useMemo(() => {
     if (!selectedUniverse || selectedChannel === null) return null
-    const addr = selectedUniverse[0]
-    const univ = selectedUniverse[1]
+    const addr = selectedUniverse.address
+    const univ = selectedUniverse.universe
     return dmxData[addr]?.[univ]?.data[selectedChannel] ?? null
   }, [dmxData, selectedUniverse, selectedChannel])
 
   // ヒストリー管理
   const selectedKey =
     selectedUniverse && selectedChannel !== null
-      ? `${selectedUniverse[0]}-${selectedUniverse[1]}-${selectedChannel}`
+      ? `${selectedUniverse.address}-${selectedUniverse.universe}-${selectedChannel}`
       : ''
-  const dmxHistory = useDmxHistory(dmxValue, selectedKey, 100)
 
+  const dmxHistory = useDmxHistory(dmxValue, selectedKey, 100)
   return (
     <div className="App flex h-screen min-h-screen flex-col bg-dmx-dark-bg text-dmx-text-light">
       <header className="App-header flex items-center justify-between bg-dmx-medium-bg p-4 shadow-md">
@@ -41,7 +41,7 @@ function App() {
           <NodeListDisplayContainer />
         </div>
         <div className="h-full min-h-0 flex-1 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
-          <ArtNetDisplayContainer />{' '}
+          <ArtNetDisplayContainer />
         </div>
         <div className="h-full max-h-full min-h-0 w-1/4 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Status</h3>
