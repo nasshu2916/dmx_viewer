@@ -1,24 +1,22 @@
-import React, { useState } from 'react'
+import React from 'react'
 import type { ArtNet } from '@/types/artnet'
-
 import type { NodeListDisplayNode } from './NodeListDisplayContainer'
+import { useSelection } from '@/contexts/SelectionContext'
 
 interface NodeListDisplayProps {
   nodes: NodeListDisplayNode[]
-  onSelectUniverses: (address: string, selected: ArtNet.Universe) => void
 }
 
 interface NodeUniverseListProps {
   address: string
   universes: ArtNet.Universe[]
-  onSelectUniverses: (address: string, selected: ArtNet.Universe) => void
 }
 
-const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes, onSelectUniverses }) => {
-  const [selectedUniverse, setSelectedUniverse] = useState<[string, ArtNet.Universe] | undefined>(undefined)
+const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes }) => {
+  const { selectedUniverse, setSelectedUniverse } = useSelection()
+
   const handleRadioChange = (address: string, universe: ArtNet.Universe) => {
-    setSelectedUniverse([address, universe])
-    onSelectUniverses(address, universe)
+    setSelectedUniverse({ address: address, universe: universe })
   }
 
   return (
@@ -26,7 +24,7 @@ const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes,
       {universes.length > 0 ? (
         <div className="flex flex-row gap-2">
           {universes.map(universe => {
-            const isSelected = selectedUniverse?.[0] === address && selectedUniverse?.[1] === universe
+            const isSelected = selectedUniverse?.address === address && selectedUniverse?.universe === universe
             return (
               <button
                 className={`ml-0 rounded border-2 px-4 py-2 transition-colors focus:outline-none ${isSelected ? 'border-dmx-accent bg-dmx-accent/10 text-dmx-accent' : 'border border-gray-600 bg-transparent text-dmx-text-light hover:bg-dmx-accent/5'}`}
@@ -37,7 +35,7 @@ const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes,
                 {universe}
               </button>
             )
-          })}{' '}
+          })}
         </div>
       ) : (
         <p className="text-sm text-gray-500">No universes received.</p>
@@ -46,7 +44,7 @@ const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes,
   )
 }
 
-const NodeInfo: React.FC<{ node: ArtNet.ArtNetNode }> = ({ node }) => {
+const NodeInfo: React.FC<{ node: ArtNet.ArtNetNode }> = React.memo(({ node }) => {
   const lastSeen = node.LastSeen ? new Date(node.LastSeen).toLocaleString() : 'Unknown'
 
   return (
@@ -57,17 +55,19 @@ const NodeInfo: React.FC<{ node: ArtNet.ArtNetNode }> = ({ node }) => {
       <p className="text-sm text-gray-400">Last Seen: {lastSeen}</p>
     </div>
   )
-}
+})
 
-const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ nodes, onSelectUniverses }) => {
+NodeInfo.displayName = 'NodeInfo'
+
+const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ nodes }) => {
   return (
     <div className="p-4">
       <h2 className="mb-4 text-xl font-bold">ArtNet Nodes</h2>
       <ul>
         {nodes.map(node => (
           <li className="mb-2 rounded border border-gray-700 p-2" key={node.address}>
-            <NodeInfo key={node.address} node={node.info} />
-            <NodeUniverseList address={node.address} universes={node.universes} onSelectUniverses={onSelectUniverses} />
+            <NodeInfo node={node.info} />
+            <NodeUniverseList address={node.address} universes={node.universes} />
           </li>
         ))}
       </ul>

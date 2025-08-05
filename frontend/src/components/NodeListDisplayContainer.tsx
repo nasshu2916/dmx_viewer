@@ -1,5 +1,4 @@
 import React from 'react'
-import { useSelection } from '@/contexts/SelectionContext'
 import NodeListDisplay from './NodeListDisplay'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import type { ArtNet } from '@/types/artnet'
@@ -12,7 +11,6 @@ export type NodeListDisplayNode = {
 }
 
 const NodeListDisplayContainer: React.FC = () => {
-  const { setSelectedUniverse } = useSelection()
   const { artNetNodes, dmxData } = useWebSocket()
   const nodes = Array.isArray(artNetNodes) ? artNetNodes : []
   const receiveUniverseByNode = new Map<string, ArtNet.Universe[]>()
@@ -40,10 +38,7 @@ const NodeListDisplayContainer: React.FC = () => {
     })),
   ]
 
-  const handleSelectUniverses = (address: string, selected: ArtNet.Universe) => {
-    setSelectedUniverse({ address, universe: selected })
-  }
-  return <NodeListDisplay nodes={displayNodes} onSelectUniverses={handleSelectUniverses} />
+  return <NodeListDisplay nodes={displayNodes} />
 }
 
 function invalidNode(address: string): ArtNet.ArtNetNode {
