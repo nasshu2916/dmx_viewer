@@ -1,8 +1,7 @@
 import { memo } from 'react'
 import type { ArtNet } from '@/types/artnet'
-import type { DmxHistoryPoint } from '@/hooks/useDmxHistory'
+import type { DmxHistoryPoint } from '@/stores/artNetStore'
 import DmxHistoryChart from './DmxHistoryChart'
-
 import type { SelectedUniverse } from '@/types'
 
 interface SelectedInfoDisplayProps {

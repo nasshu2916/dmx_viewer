@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
-import type { DmxHistoryPoint } from '@/hooks/useDmxHistory'
+import type { DmxHistoryPoint } from '@/stores/artNetStore'
 
 interface DmxHistoryChartProps {
   history: DmxHistoryPoint[]

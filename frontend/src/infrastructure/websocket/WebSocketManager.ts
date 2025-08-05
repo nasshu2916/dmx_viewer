@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { WebSocketService, type WebSocketConfig } from './WebSocketService'
 import { MessageRouter, type MessageHandler } from './MessageRouter'
 import { useArtNetStore, type ArtNetStore } from '@/stores'
+import { useSelectionStore } from '@/stores/selectionStore'
 import type { ArtNet } from '@/types/artnet'
 import { getUniverse } from '@/service/artnet'
 
@@ -47,6 +48,20 @@ export const useWebSocketManager = (config: WebSocketConfig): WebSocketManager =
         const address: string = packet.SourceIP ?? 'unknown'
         const receivedAt: Date = new Date(Date.now())
         artNetStore.updateDmxData(address, universe, dmxValues, receivedAt)
+
+        // dmxHistory更新
+        const { selectedUniverse, selectedChannel } = useSelectionStore.getState()
+        if (
+          selectedUniverse &&
+          selectedUniverse.address === address &&
+          selectedUniverse.universe === universe &&
+          selectedChannel !== null
+        ) {
+          const dmxValue = dmxValues[selectedChannel]
+          if (typeof dmxValue === 'number') {
+            artNetStore.updateDmxHistory(dmxValue, 100)
+          }
+        }
       },
       onServerMessage: message => {
         artNetStore.addServerMessage(message)

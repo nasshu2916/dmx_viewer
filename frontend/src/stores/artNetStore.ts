@@ -2,11 +2,17 @@ import { create } from 'zustand'
 import type { ArtNet } from '@/types/artnet'
 import type { ServerMessage } from '@/types/websocket'
 
+export interface DmxHistoryPoint {
+  value: number
+  timestamp: number
+}
+
 export interface ArtNetStore {
   // State
   dmxData: Record<string, Record<ArtNet.Universe, { data: ArtNet.DmxValue[]; receivedAt: Date }>>
   serverMessages: ServerMessage[]
   artNetNodes: ArtNet.ArtNetNode[]
+  dmxHistory: DmxHistoryPoint[]
 
   // Actions
   updateDmxData: (address: string, universe: ArtNet.Universe, data: ArtNet.DmxValue[], receivedAt: Date) => void
@@ -14,12 +20,14 @@ export interface ArtNetStore {
   setServerMessages: (messages: ServerMessage[]) => void
   setArtNetNodes: (nodes: ArtNet.ArtNetNode[]) => void
   clearData: () => void
+  updateDmxHistory: (value: ArtNet.DmxValue, maxLength: number) => void
 }
 
 export const useArtNetStore = create<ArtNetStore>(set => ({
   dmxData: {},
   serverMessages: [],
   artNetNodes: [],
+  dmxHistory: [],
 
   updateDmxData: (address, universe, data, receivedAt) => {
     set(state => ({
@@ -56,6 +64,16 @@ export const useArtNetStore = create<ArtNetStore>(set => ({
       dmxData: {},
       serverMessages: [],
       artNetNodes: [],
+      dmxHistory: [],
+    })
+  },
+
+  updateDmxHistory: (value, maxLength) => {
+    set(state => {
+      const prevHistory = state.dmxHistory
+      const sliced =
+        prevHistory.length >= maxLength ? prevHistory.slice(prevHistory.length - maxLength + 1) : prevHistory
+      return { dmxHistory: [...sliced, { value: value, timestamp: Date.now() }] }
     })
   },
 }))

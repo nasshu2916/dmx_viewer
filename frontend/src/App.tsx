@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import './App.css'
 import ArtNetDisplayContainer from './components/ArtNetDisplayContainer'
 import TimeDisplayContainer from './components/TimeDisplayContainer'
@@ -8,27 +7,13 @@ import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useSelectionStore } from '@/stores/selectionStore'
 import { useArtNetStore } from '@/stores/artNetStore'
-import { useDmxHistory } from './hooks/useDmxHistory'
 
 function App() {
   const { isConnected } = useWebSocket()
-  const { serverMessages, dmxData } = useArtNetStore()
+  const { serverMessages } = useArtNetStore()
   const { selectedUniverse, selectedChannel } = useSelectionStore()
+  const { dmxHistory } = useArtNetStore()
 
-  const dmxValue = useMemo(() => {
-    if (!selectedUniverse || selectedChannel === null) return null
-    const addr = selectedUniverse.address
-    const univ = selectedUniverse.universe
-    return dmxData[addr]?.[univ]?.data[selectedChannel] ?? null
-  }, [dmxData, selectedUniverse, selectedChannel])
-
-  // ヒストリー管理
-  const selectedKey =
-    selectedUniverse && selectedChannel !== null
-      ? `${selectedUniverse.address}-${selectedUniverse.universe}-${selectedChannel}`
-      : ''
-
-  const dmxHistory = useDmxHistory(dmxValue, selectedKey, 100)
   return (
     <div className="App flex h-screen min-h-screen flex-col bg-dmx-dark-bg text-dmx-text-light">
       <header className="App-header flex items-center justify-between bg-dmx-medium-bg p-4 shadow-md">
