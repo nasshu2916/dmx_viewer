@@ -7,6 +7,7 @@ import WebSocketStatusIndicator from './components/WebSocketStatusIndicator'
 import NodeListDisplayContainer from './components/NodeListDisplayContainer'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import type { ArtNet } from '@/types/artnet'
+import { useDmxHistory } from './hooks/useDmxHistory'
 
 function App() {
   const { isConnected, serverMessages, dmxData } = useWebSocket()
@@ -23,6 +24,13 @@ function App() {
     const univ = selectedUniverse[1]
     return dmxData[addr]?.[univ]?.data[selectedChannel] ?? null
   }, [dmxData, selectedUniverse, selectedChannel])
+
+  // ヒストリー管理
+  const selectedKey =
+    selectedUniverse && selectedChannel !== null
+      ? `${selectedUniverse[0]}-${selectedUniverse[1]}-${selectedChannel}`
+      : ''
+  const dmxHistory = useDmxHistory(dmxValue, selectedKey, 100)
 
   return (
     <div className="App flex h-screen min-h-screen flex-col bg-dmx-dark-bg text-dmx-text-light">
@@ -47,6 +55,7 @@ function App() {
         <div className="h-full max-h-full min-h-0 w-1/4 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Status</h3>
           <SelectedInfoDisplay
+            dmxHistory={dmxHistory}
             dmxValue={dmxValue}
             selectedChannel={selectedChannel}
             selectedUniverse={selectedUniverse}
