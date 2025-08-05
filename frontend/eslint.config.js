@@ -87,6 +87,7 @@ export default [
       'no-unused-vars': 'off',
 
       // React
+      'react/prop-types': 'off',
       'react/jsx-boolean-value': ['error', 'never'],
       'react/jsx-curly-brace-presence': ['error', { props: 'never', children: 'never' }],
       'react/jsx-no-duplicate-props': 'error',
