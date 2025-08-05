@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { ArtNet } from '@/types/artnet'
 import type { DmxHistoryPoint } from '@/hooks/useDmxHistory'
 import DmxHistoryChart from './DmxHistoryChart'
@@ -5,12 +6,12 @@ import DmxHistoryChart from './DmxHistoryChart'
 import type { SelectedUniverse } from '@/types'
 
 interface SelectedInfoDisplayProps {
-  selectedUniverse?: SelectedUniverse
+  selectedUniverse: SelectedUniverse | undefined
   selectedChannel: ArtNet.DmxChannel | null
   dmxHistory: DmxHistoryPoint[]
 }
 
-const SelectedInfoDisplay = ({ selectedUniverse, selectedChannel, dmxHistory }: SelectedInfoDisplayProps) => {
+const SelectedInfoDisplay = memo(({ selectedUniverse, selectedChannel, dmxHistory }: SelectedInfoDisplayProps) => {
   const dmxValue = dmxHistory.length > 0 ? dmxHistory[dmxHistory.length - 1].value : null
 
   return (
@@ -36,6 +37,6 @@ const SelectedInfoDisplay = ({ selectedUniverse, selectedChannel, dmxHistory }: 
       </div>
     </div>
   )
-}
+})
 
 export default SelectedInfoDisplay

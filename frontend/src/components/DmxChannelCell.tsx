@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import type { ArtNet } from '@/types/artnet'
 
 interface DmxChannelCellProps {
@@ -8,7 +8,7 @@ interface DmxChannelCellProps {
   onClick: (channel: ArtNet.DmxChannel) => void
 }
 
-const DmxChannelCell: React.FC<DmxChannelCellProps> = ({ channel, value, selected, onClick }) => {
+const DmxChannelCell: React.FC<DmxChannelCellProps> = memo(({ channel, value, selected, onClick }) => {
   const barHeight = `${(value / 255) * 100}%`
 
   return (
@@ -23,6 +23,6 @@ const DmxChannelCell: React.FC<DmxChannelCellProps> = ({ channel, value, selecte
       </div>
     </div>
   )
-}
+})
 
 export default DmxChannelCell

@@ -23,20 +23,23 @@ const NodeListDisplayContainer: React.FC = () => {
     address => !nodes.some(node => node.IPAddress === address)
   )
 
-  const displayNodes: NodeListDisplayNode[] = [
-    ...nodes.map(node => ({
-      address: node.IPAddress,
-      info: node,
-      universes: receiveUniverseByNode.get(node.IPAddress) || [],
-      isUnknown: false,
-    })),
-    ...missingAddresses.map(address => ({
-      address,
-      info: invalidNode(address),
-      universes: receiveUniverseByNode.get(address) || [],
-      isUnknown: true,
-    })),
-  ]
+  const displayNodes: NodeListDisplayNode[] = React.useMemo(
+    () => [
+      ...nodes.map(node => ({
+        address: node.IPAddress,
+        info: node,
+        universes: receiveUniverseByNode.get(node.IPAddress) || [],
+        isUnknown: false,
+      })),
+      ...missingAddresses.map(address => ({
+        address,
+        info: invalidNode(address),
+        universes: receiveUniverseByNode.get(address) || [],
+        isUnknown: true,
+      })),
+    ],
+    [nodes, receiveUniverseByNode, missingAddresses]
+  )
 
   return <NodeListDisplay nodes={displayNodes} />
 }
@@ -51,4 +54,4 @@ function invalidNode(address: string): ArtNet.ArtNetNode {
   }
 }
 
-export default NodeListDisplayContainer
+export default React.memo(NodeListDisplayContainer)

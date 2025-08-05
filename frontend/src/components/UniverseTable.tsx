@@ -1,5 +1,5 @@
 /* global HTMLTableCellElement, ScrollIntoViewOptions */
-import React from 'react'
+import React, { useCallback } from 'react'
 import DmxChannelCell from './DmxChannelCell'
 import type { ArtNet } from '@/types/artnet'
 
@@ -34,6 +34,13 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
   const length = data.length
   const rows = Math.ceil(length / columns)
 
+  const handleCellClick = useCallback(
+    (channel: ArtNet.DmxChannel) => {
+      onSelectChannel(channel)
+    },
+    [onSelectChannel]
+  )
+
   return (
     <div className="mb-4 rounded-lg bg-dmx-light-bg p-4 shadow-lg">
       <h4 className="mb-2 flex text-lg font-bold text-dmx-text-light">
@@ -63,7 +70,7 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
                           channel={channel}
                           selected={isSelected}
                           value={value}
-                          onClick={() => onSelectChannel(channel)}
+                          onClick={handleCellClick}
                         />
                       </td>
                     )

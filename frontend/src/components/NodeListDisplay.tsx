@@ -12,37 +12,48 @@ interface NodeUniverseListProps {
   universes: ArtNet.Universe[]
 }
 
-const NodeUniverseList: React.FC<NodeUniverseListProps> = ({ address, universes }) => {
-  const { selectedUniverse, setSelectedUniverse } = useSelection()
+const NodeUniverseList: React.FC<NodeUniverseListProps> = React.memo(
+  ({ address, universes }) => {
+    const { selectedUniverse, setSelectedUniverse } = useSelection()
 
-  const handleRadioChange = (address: string, universe: ArtNet.Universe) => {
-    setSelectedUniverse({ address: address, universe: universe })
+    const handleRadioChange = (address: string, universe: ArtNet.Universe) => {
+      setSelectedUniverse({ address: address, universe: universe })
+    }
+
+    return (
+      <div className="my-2">
+        {universes.length > 0 ? (
+          <div className="flex flex-row gap-2">
+            {universes.map(universe => {
+              const isSelected = selectedUniverse?.address === address && selectedUniverse?.universe === universe
+              return (
+                <button
+                  className={`ml-0 rounded border-2 px-4 py-2 transition-colors focus:outline-none ${isSelected ? 'border-dmx-accent bg-dmx-accent/10 text-dmx-accent' : 'border border-gray-600 bg-transparent text-dmx-text-light hover:bg-dmx-accent/5'}`}
+                  key={universe}
+                  type="button"
+                  onClick={() => handleRadioChange(address, universe)}
+                >
+                  {universe}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No universes received.</p>
+        )}
+      </div>
+    )
+  },
+  (prevProps, nextProps) => {
+    // addressが同じ、universesがshallow equalなら再レンダリングしない
+    if (prevProps.address !== nextProps.address) return false
+    if (prevProps.universes.length !== nextProps.universes.length) return false
+    for (let i = 0; i < prevProps.universes.length; i++) {
+      if (prevProps.universes[i] !== nextProps.universes[i]) return false
+    }
+    return true
   }
-
-  return (
-    <div className="my-2">
-      {universes.length > 0 ? (
-        <div className="flex flex-row gap-2">
-          {universes.map(universe => {
-            const isSelected = selectedUniverse?.address === address && selectedUniverse?.universe === universe
-            return (
-              <button
-                className={`ml-0 rounded border-2 px-4 py-2 transition-colors focus:outline-none ${isSelected ? 'border-dmx-accent bg-dmx-accent/10 text-dmx-accent' : 'border border-gray-600 bg-transparent text-dmx-text-light hover:bg-dmx-accent/5'}`}
-                key={universe}
-                type="button"
-                onClick={() => handleRadioChange(address, universe)}
-              >
-                {universe}
-              </button>
-            )
-          })}
-        </div>
-      ) : (
-        <p className="text-sm text-gray-500">No universes received.</p>
-      )}
-    </div>
-  )
-}
+)
 
 const NodeInfo: React.FC<{ node: ArtNet.ArtNetNode }> = React.memo(({ node }) => {
   const lastSeen = node.LastSeen ? new Date(node.LastSeen).toLocaleString() : 'Unknown'
@@ -75,4 +86,4 @@ const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ nodes }) => {
   )
 }
 
-export default NodeListDisplay
+export default React.memo(NodeListDisplay)
