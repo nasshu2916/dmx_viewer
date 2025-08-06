@@ -25,7 +25,6 @@
     "@testing-library/react": "^16.3.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/node": "^22.10.3",
-    "@types/phoenix": "^1.6.6",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.35.0",
@@ -35,7 +34,6 @@
     "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.0",
-    "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jsdom": "^26.1.0",
@@ -43,7 +41,6 @@
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
-    "ts-proto": "^2.7.5",
     "typescript": "^5.8.3",
     "vite": "^7.0.2",
     "vitest": "^3.2.4"

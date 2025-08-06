@@ -6,7 +6,7 @@ export interface WebSocketConfig {
   reconnectInterval?: number
 }
 
-export interface WebSocketEventHandlers {
+interface WebSocketEventHandlers {
   onOpen?: () => void
   onClose?: () => void
   onError?: () => void
