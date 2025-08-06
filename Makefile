@@ -53,6 +53,7 @@ lint-frontend: ## Lint the frontend
 	${NPM} run format --prefix $(FRONTEND_DIR)
 	${NPM} run lint --prefix $(FRONTEND_DIR)
 	${NPM} run type-check --prefix $(FRONTEND_DIR)
+	cd $(FRONTEND_DIR) && npx knip
 
 .PHONY: lint-backend
 lint-backend: ## Lint the backend
