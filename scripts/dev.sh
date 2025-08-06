@@ -2,6 +2,6 @@
 
 cd "$(dirname "$0")/.."
 
-npm run --prefix ./frontend watch -- --mode debug &
+npm run --prefix ./frontend watch -- --mode development &
 (cd ./backend/ && air) &
 wait
