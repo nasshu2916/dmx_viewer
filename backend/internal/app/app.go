@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/di"
@@ -62,6 +63,26 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS)
 	router := router.NewRouter(staticHandler, timeHandler, wsHandler)
 
-	logger.Info(fmt.Sprintf("Server started on :%s", config.App.Port))
-	http.ListenAndServe(fmt.Sprintf(":%s", config.App.Port), router)
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%s", config.App.Port),
+		Handler: router,
+	}
+
+	go func() {
+		logger.Info(fmt.Sprintf("Server started on :%s", config.App.Port))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("HTTP server stopped with error: ", err)
+		}
+	}()
+
+	<-ctx.Done()
+	logger.Info("Shutting down HTTP server...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Error("HTTP server shutdown error: ", err)
+	} else {
+		logger.Info("HTTP server shutdown gracefully")
+	}
 }
