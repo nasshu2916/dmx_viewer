@@ -23,14 +23,14 @@ function App() {
           <WebSocketStatusIndicator isConnected={isConnected} />
         </div>
       </header>
-      <main className="App-main-content flex h-full min-h-0 flex-1 space-x-4 p-4">
-        <div className="h-full max-h-full min-h-0 w-1/4 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
+      <main className="App-main-content flex h-full min-h-0 flex-1 flex-col space-y-4 p-2 md:flex-row md:space-x-4 md:space-y-0 md:p-4">
+        <div className="h-full max-h-full min-h-0 w-full overflow-auto rounded-lg bg-dmx-medium-bg p-2 shadow-lg md:w-1/4 md:max-w-xs md:p-4">
           <NodeListDisplayContainer />
         </div>
-        <div className="h-full min-h-0 flex-1 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
+        <div className="h-full min-h-0 w-full overflow-auto rounded-lg bg-dmx-medium-bg p-2 shadow-lg md:flex-1 md:p-4">
           <ArtNetDisplayContainer />
         </div>
-        <div className="h-full max-h-full min-h-0 w-1/4 overflow-auto rounded-lg bg-dmx-medium-bg p-4 shadow-lg">
+        <div className="h-full max-h-full min-h-0 w-full overflow-auto rounded-lg bg-dmx-medium-bg p-2 shadow-lg md:w-1/4 md:max-w-xs md:p-4">
           <h3 className="mb-4 text-lg font-bold text-dmx-text-light">Status</h3>
           <SelectedInfoDisplay
             dmxHistory={dmxHistory}

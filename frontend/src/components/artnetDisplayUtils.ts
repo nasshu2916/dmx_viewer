@@ -6,7 +6,7 @@
  * @param maxColumns - 最大カラム数（デフォルト32）
  * @returns 2のN乗のカラム数（minColumns <= columns <= maxColumns）
  */
-export function calcColumns(containerWidth: number, cellWidth = 46, minColumns = 1, maxColumns = 32): number {
+export function calcColumns(containerWidth: number, cellWidth = 24, minColumns = 1, maxColumns = 32): number {
   let cols = Math.max(minColumns, Math.min(maxColumns, Math.floor(containerWidth / cellWidth)))
   // 2のN乗に切り捨て
   cols = Math.pow(2, Math.floor(Math.log2(cols)))

@@ -18,8 +18,8 @@ const DmxChannelCell: React.FC<DmxChannelCellProps> = memo(({ channel, value, se
     >
       <div className="absolute bottom-0 left-0 z-0 w-full bg-dmx-channel-active" style={{ height: barHeight }} />
       <div className="z-10">
-        <div className="text-xxs text-dmx-text-gray">{channel}</div>
-        <div className="text-sm font-bold">{value}</div>
+        <div className="text-xxs text-dmx-text-gray md:text-xs">{channel}</div>
+        <div className="text-xs font-bold md:text-base">{value}</div>
       </div>
     </div>
   )

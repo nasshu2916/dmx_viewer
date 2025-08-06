@@ -23,7 +23,7 @@ const NodeUniverseList: React.FC<NodeUniverseListProps> = React.memo(
     return (
       <div className="my-2">
         {universes.length > 0 ? (
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-wrap gap-2">
             {universes.map(universe => {
               const isSelected = selectedUniverse?.address === address && selectedUniverse?.universe === universe
               return (
@@ -60,10 +60,22 @@ const NodeInfo: React.FC<{ node: ArtNet.ArtNetNode }> = React.memo(({ node }) =>
 
   return (
     <div>
-      <p className="font-semibold">{node.ShortName || 'Unknown Node'}</p>
-      <p className="text-sm text-gray-400">IP: {node.IPAddress}</p>
-      <p className="text-sm text-gray-400">MAC: {node.MacAddress}</p>
-      <p className="text-sm text-gray-400">Last Seen: {lastSeen}</p>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-left font-bold">Name</span>
+        <span className="text-right">{node.ShortName || 'Unknown Node'}</span>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-left font-bold">IP</span>
+        <span className="text-right">{node.IPAddress}</span>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-left font-bold">MAC</span>
+        <span className="text-right">{node.MacAddress}</span>
+      </div>
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-left font-bold">Last Seen</span>
+        <span className="text-right">{lastSeen}</span>
+      </div>
     </div>
   )
 })
@@ -76,7 +88,7 @@ const NodeListDisplay: React.FC<NodeListDisplayProps> = ({ nodes }) => {
       <h2 className="mb-4 text-xl font-bold">ArtNet Nodes</h2>
       <ul>
         {nodes.map(node => (
-          <li className="mb-2 rounded border border-gray-700 p-2" key={node.address}>
+          <li className="mb-2 rounded border-2 border-gray-500 p-2" key={node.address}>
             <NodeInfo node={node.info} />
             <NodeUniverseList address={node.address} universes={node.universes} />
           </li>

@@ -42,7 +42,7 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
   )
 
   return (
-    <div className="mb-4 rounded-lg bg-dmx-light-bg p-4 shadow-lg">
+    <div className="mb-2 rounded-lg bg-dmx-light-bg p-2 shadow-lg md:mb-4">
       <h4 className="mb-2 flex text-lg font-bold text-dmx-text-light">
         Universe: {universe}
         {receivedAt && (
@@ -50,7 +50,7 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
         )}
       </h4>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-full table-fixed border-collapse text-dmx-text-light">
+        <table className="w-full min-w-[600px] table-fixed border-collapse text-xs text-dmx-text-light md:text-base">
           <tbody>
             {Array.from({ length: rows }).map((_, rowIdx) => {
               const rowStartChannel = rowIdx * columns
@@ -65,7 +65,11 @@ const UniverseTable: React.FC<UniverseTableProps> = ({
                     const value = (data[channel] ?? 0) as ArtNet.DmxValue
                     const isSelected = selectedChannel === channel
                     return (
-                      <td key={`channel-${universe}-${channel}`} ref={isSelected ? selectedCellRef : undefined}>
+                      <td
+                        className="w-8 min-w-8 p-0 md:w-12 md:min-w-12"
+                        key={`channel-${universe}-${channel}`}
+                        ref={isSelected ? selectedCellRef : undefined}
+                      >
                         <DmxChannelCell
                           channel={channel}
                           selected={isSelected}

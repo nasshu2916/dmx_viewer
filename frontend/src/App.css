@@ -15,9 +15,19 @@ body,
 }
 
 body {
-  background-color: theme('colors.dmx-dark-bg');
+  background: linear-gradient(135deg, #1c1c1c 0%, #282828 100%);
   color: theme('colors.dmx-text-light');
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .App {
