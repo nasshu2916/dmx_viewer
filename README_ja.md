@@ -4,6 +4,8 @@
 
 DMX Viewer は、ArtNet 信号をリアルタイムで可視化する Web ページを提供します。
 
+![dmx_viewer](https://github.com/user-attachments/assets/da3a52e7-0712-4b6e-8bbc-7249f7bb9c4e)
+
 ## 機能
 
 - **リアルタイムでDMX信号を表示**  

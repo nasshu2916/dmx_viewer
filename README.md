@@ -4,6 +4,8 @@
 
 DMX Viewer provides a web page to visualize ArtNet signals in real time.
 
+![dmx_viewer](https://github.com/user-attachments/assets/da3a52e7-0712-4b6e-8bbc-7249f7bb9c4e)
+
 ## Features
 
 - **Display DMX signals in real time**  
