@@ -1,0 +1,12 @@
+[files]
+extend-exclude = [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/.cache/**",
+    "**/tmp/**",
+    "**/release/**",
+]

@@ -55,6 +55,15 @@ jobs:
       - name: Build
         run: go build ./...
 
+  typos:
+    name: Typos check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Typos
+        uses: crate-ci/typos@master
+
   frontend:
     name: Frontend (TypeScript)
     runs-on: ubuntu-latest
