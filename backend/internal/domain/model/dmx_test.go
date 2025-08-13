@@ -225,7 +225,6 @@ func TestDMXData_String(t *testing.T) {
 	}
 
 	str := dmx.String()
-	assert.Contains(t, str, "Universe:517") // 2*256+5 = 517
-	assert.Contains(t, str, "Seq:10")
-	assert.Contains(t, str, "Length:100")
+	expected := "DMX[Universe:517, Seq:10, Length:100]" // 2*256+5 = 517
+	assert.Equal(t, expected, str)
 }

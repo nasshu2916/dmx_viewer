@@ -129,7 +129,7 @@ func (d *DMXData) GetChannelRange(startChannel, endChannel int) ([]uint8, error)
 
 // String DMXDataの文字列表現
 func (d *DMXData) String() string {
-	return fmt.Sprintf("DMX[Universe:%d, Seq:%d, Length:%d",
+	return fmt.Sprintf("DMX[Universe:%d, Seq:%d, Length:%d]",
 		d.GetUniverse(), d.Sequence, d.Length)
 }
 
