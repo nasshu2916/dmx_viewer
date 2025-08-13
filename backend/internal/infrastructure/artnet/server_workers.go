@@ -33,7 +33,7 @@ func (s *Server) runReceiver() {
 // processIncomingPackets 受信パケットを処理
 func (s *Server) processIncomingPackets(buffer []byte) error {
 	s.conn.SetReadDeadline(time.Now().Add(DefaultReadTimeout))
-	n, recievedAddr, err := s.conn.ReadFrom(buffer)
+	n, receivedAddr, err := s.conn.ReadFrom(buffer)
 	if err != nil {
 		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 			// タイムアウトの場合、done チャンネルをチェックしてから続行
@@ -55,7 +55,7 @@ func (s *Server) processIncomingPackets(buffer []byte) error {
 
 	receivedPacket := model.ReceivedData{
 		Data: data,
-		Addr: recievedAddr,
+		Addr: receivedAddr,
 	}
 
 	return s.sendToReceiveChannel(receivedPacket)

@@ -27,7 +27,7 @@ func (ph *PanicHandler) Handle() {
 	}
 }
 
-// ChannelUtilization チャンネル使用率計算
+// CalculateUtilization チャンネル使用率計算
 func CalculateUtilization(current, capacity int) float64 {
 	if capacity == 0 {
 		return 0.0

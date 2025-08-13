@@ -38,7 +38,7 @@ export class MessageRouter {
       return
     }
 
-    const { Type, Data } = message as { Type: string; Data: unknown }
+    const { Type, Data } = message
 
     if (Type in this.handlerMap) {
       this.handlerMap[Type](Data)
@@ -48,7 +48,16 @@ export class MessageRouter {
     }
   }
 
-  private isValidMessage(message: unknown): message is { Type: string; Data: unknown } {
-    return message !== null && typeof message === 'object' && 'Type' in message && typeof message.Type === 'string'
+  private isValidMessage(message: unknown): message is { Type: string; Data: object } {
+    if (message === null || typeof message !== 'object') {
+      return false
+    }
+
+    const { Type, Data } = message as {
+      Type?: unknown
+      Data?: unknown
+    }
+
+    return typeof Type === 'string' && typeof Data === 'object' && Data !== null
   }
 }
