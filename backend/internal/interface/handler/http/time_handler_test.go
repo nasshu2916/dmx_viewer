@@ -9,6 +9,7 @@ import (
 	"time"
 
 	internalHttp "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
+	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,7 +32,8 @@ func TestTimeHandler_GetTime(t *testing.T) {
 	expectedTime := time.Date(2024, time.July, 21, 10, 30, 0, 0, time.UTC)
 	mockUseCase.On("GetCurrentTime").Return(expectedTime)
 
-	handler := internalHttp.NewTimeHandler(mockUseCase)
+	l := logger.NewLogger("error")
+	handler := internalHttp.NewTimeHandler(mockUseCase, l)
 
 	req, err := http.NewRequest("GET", "/time", nil)
 	assert.NoError(t, err)

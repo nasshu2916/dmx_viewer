@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/nasshu2916/dmx_viewer/internal/interface/httpctx"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
@@ -29,6 +30,13 @@ func NewWebSocketHandler(hub *Hub, logger *logger.Logger) *WebSocketHandler {
 }
 
 func (h *WebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
+	// アクセスログ（Request-ID/Real-IP）
+	h.logger.Info("websocket handler: ServeWS",
+		"request_id", r.Header.Get("X-Request-Id"),
+		"real_ip", httpctx.RealIP(r.Context()),
+		"method", r.Method,
+		"path", r.URL.Path,
+	)
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.Error("Failed to upgrade WebSocket connection", "error", err)

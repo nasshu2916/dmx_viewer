@@ -23,6 +23,6 @@ func InitializeTimeHandler(logger2 *logger.Logger) (*http.TimeHandler, error) {
 		return nil, err
 	}
 	timeUseCaseImpl := usecase.NewTimeUseCaseImpl(timeRepositoryImpl, configConfig, logger2)
-	timeHandler := http.NewTimeHandler(timeUseCaseImpl)
+	timeHandler := http.NewTimeHandler(timeUseCaseImpl, logger2)
 	return timeHandler, nil
 }
