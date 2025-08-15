@@ -8,6 +8,7 @@ import (
 
 	"github.com/nasshu2916/dmx_viewer/internal/config"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
+	metrics "github.com/nasshu2916/dmx_viewer/internal/infrastructure/metrics"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,7 +18,10 @@ func TestMetricsHandler_ServeHTTP(t *testing.T) {
 	cfg := &config.ArtNet{PollIntervalSeconds: 300}
 	server := artnet.NewServer(l, cfg)
 
-	mh := NewMetricsHandler(server, l)
+	// Collector を登録
+	metrics.RegisterArtNetMetrics(server, l)
+
+	mh := NewMetricsHandler(nil, l)
 
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	rr := httptest.NewRecorder()

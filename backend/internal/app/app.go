@@ -12,6 +12,7 @@ import (
 	"github.com/nasshu2916/dmx_viewer/internal/di"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
+	metrics "github.com/nasshu2916/dmx_viewer/internal/infrastructure/metrics"
 	httpHandler "github.com/nasshu2916/dmx_viewer/internal/interface/handler/http"
 	"github.com/nasshu2916/dmx_viewer/internal/interface/handler/websocket"
 	"github.com/nasshu2916/dmx_viewer/internal/interface/router"
@@ -62,7 +63,10 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 
 	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS, logger)
 	healthHandler := httpHandler.NewHealthHandler(artNetServer, logger)
-	metricsHandler := httpHandler.NewMetricsHandler(artNetServer, logger)
+
+	// Prometheus メトリクス登録（プロセス/Go標準 + ArtNet カスタム）
+	metrics.RegisterArtNetMetrics(artNetServer, logger)
+	metricsHandler := httpHandler.NewMetricsHandler(nil, logger)
 
 	httpTimeout := time.Duration(config.App.HTTPTimeoutSeconds) * time.Second
 	router := router.NewRouter(staticHandler, timeHandler, healthHandler, metricsHandler, wsHandler, logger, httpTimeout)
