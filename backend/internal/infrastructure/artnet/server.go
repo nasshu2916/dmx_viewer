@@ -97,6 +97,12 @@ func (s *Server) Run() error {
 	return nil
 }
 
+// IsRunning returns true if the UDP listener is established.
+// It can be used as a readiness signal for HTTP readiness checks.
+func (s *Server) IsRunning() bool {
+	return s.conn != nil
+}
+
 func (s *Server) SendToWriteChan(data []byte, addr net.Addr) error {
 	if err := s.validateConnection(); err != nil {
 		return err

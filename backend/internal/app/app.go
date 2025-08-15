@@ -61,8 +61,11 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	go artNetUseCase.StartPacketForwarding(ctx, artNetServer)
 
 	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS, logger)
+	healthHandler := httpHandler.NewHealthHandler(artNetServer, logger)
+	metricsHandler := httpHandler.NewMetricsHandler(artNetServer, logger)
+
 	httpTimeout := time.Duration(config.App.HTTPTimeoutSeconds) * time.Second
-	router := router.NewRouter(staticHandler, timeHandler, wsHandler, logger, httpTimeout)
+	router := router.NewRouter(staticHandler, timeHandler, healthHandler, metricsHandler, wsHandler, logger, httpTimeout)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", config.App.Port),

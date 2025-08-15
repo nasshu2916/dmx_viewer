@@ -10,7 +10,7 @@ import (
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
-func NewRouter(static *httpHandler.StaticHandler, timeHandler *httpHandler.TimeHandler, ws *websocket.WebSocketHandler, l *logger.Logger, httpTimeout time.Duration) http.Handler {
+func NewRouter(static *httpHandler.StaticHandler, timeHandler *httpHandler.TimeHandler, health *httpHandler.HealthHandler, metrics *httpHandler.MetricsHandler, ws *websocket.WebSocketHandler, l *logger.Logger, httpTimeout time.Duration) http.Handler {
 	r := chi.NewRouter()
 
 	// ベース（全体）ミドルウェア
@@ -27,6 +27,9 @@ func NewRouter(static *httpHandler.StaticHandler, timeHandler *httpHandler.TimeH
 		gr.Get("/", static.GetIndex)
 		gr.Handle("/assets/*", static.AssetsHandler())
 		gr.Get("/api/time", timeHandler.GetTime)
+		gr.Get("/healthz", health.Healthz)
+		gr.Get("/readyz", health.Readyz)
+		gr.Handle("/metrics", metrics)
 	})
 
 	// WebSocket グループ（タイムアウトは適用しない）
