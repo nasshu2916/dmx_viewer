@@ -1,9 +1,7 @@
 package metrics
 
 import (
-	"errors"
 	"github.com/nasshu2916/dmx_viewer/internal/infrastructure/artnet"
-	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 )
@@ -113,24 +111,14 @@ func (c *ArtNetMetricsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-// RegisterArtNetMetrics はカスタム Collector と標準 Collector を登録する
-func RegisterArtNetMetrics(server *artnet.Server, _ *logger.Logger) {
-	// デフォルトレジストリにプロセス/Go/ビルド情報 Collector を登録（重複登録は無視）
-	_ = registerIfNeeded(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
-	_ = registerIfNeeded(collectors.NewGoCollector())
-	_ = registerIfNeeded(collectors.NewBuildInfoCollector())
-
-	// ArtNetカスタムメトリクス（重複登録は無視）
-	_ = registerIfNeeded(NewArtNetMetricsCollector(server))
-}
-
-func registerIfNeeded(c prometheus.Collector) error {
-	if err := prometheus.Register(c); err != nil {
-		var are prometheus.AlreadyRegisteredError
-		if errors.As(err, &are) {
-			return nil
-		}
-		return err
-	}
-	return nil
+// BuildRegistry は専用の Registry を作成し、標準 Collector と ArtNet Collector を登録して返す
+func BuildRegistry(server *artnet.Server) *prometheus.Registry {
+	reg := prometheus.NewRegistry()
+	// 標準Collector
+	_ = reg.Register(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	_ = reg.Register(collectors.NewGoCollector())
+	_ = reg.Register(collectors.NewBuildInfoCollector())
+	// カスタムCollector
+	_ = reg.Register(NewArtNetMetricsCollector(server))
+	return reg
 }

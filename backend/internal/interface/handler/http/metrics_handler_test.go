@@ -18,10 +18,9 @@ func TestMetricsHandler_ServeHTTP(t *testing.T) {
 	cfg := &config.ArtNet{PollIntervalSeconds: 300}
 	server := artnet.NewServer(l, cfg)
 
-	// Collector を登録
-	metrics.RegisterArtNetMetrics(server, l)
-
-	mh := NewMetricsHandler(nil, l)
+	// カスタムRegistryを構築
+	reg := metrics.BuildRegistry(server)
+	mh := NewMetricsHandlerWithRegistry(reg, l)
 
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	rr := httptest.NewRecorder()

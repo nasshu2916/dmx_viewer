@@ -64,9 +64,9 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS, logger)
 	healthHandler := httpHandler.NewHealthHandler(artNetServer, logger)
 
-	// Prometheus メトリクス登録（プロセス/Go標準 + ArtNet カスタム）
-	metrics.RegisterArtNetMetrics(artNetServer, logger)
-	metricsHandler := httpHandler.NewMetricsHandler(nil, logger)
+	// Prometheus レジストリ構築（プロセス/Go標準 + ArtNet カスタム）
+	reg := metrics.BuildRegistry(artNetServer)
+	metricsHandler := httpHandler.NewMetricsHandlerWithRegistry(reg, logger)
 
 	httpTimeout := time.Duration(config.App.HTTPTimeoutSeconds) * time.Second
 	router := router.NewRouter(staticHandler, timeHandler, healthHandler, metricsHandler, wsHandler, logger, httpTimeout)

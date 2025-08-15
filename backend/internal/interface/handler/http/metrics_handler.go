@@ -5,17 +5,19 @@ import (
 
 	"github.com/nasshu2916/dmx_viewer/internal/interface/httpctx"
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// MetricsHandler は promhttp に委譲してメトリクスを返す
+// MetricsHandler は promhttp に委譲してメトリクスを返す（カスタムRegistry対応）
 type MetricsHandler struct {
 	handler http.Handler
 	logger  *logger.Logger
 }
 
-func NewMetricsHandler(_ interface{}, logger *logger.Logger) *MetricsHandler {
-	return &MetricsHandler{handler: promhttp.Handler(), logger: logger}
+// NewMetricsHandlerWithRegistry は指定された Registry を利用してハンドラを返す
+func NewMetricsHandlerWithRegistry(reg prometheus.Gatherer, logger *logger.Logger) *MetricsHandler {
+	return &MetricsHandler{handler: promhttp.HandlerFor(reg, promhttp.HandlerOpts{}), logger: logger}
 }
 
 // ServeHTTP implements http.Handler
