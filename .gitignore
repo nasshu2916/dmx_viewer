@@ -13,3 +13,4 @@ release/
 
 .env
 .envrc
+.DS_Store

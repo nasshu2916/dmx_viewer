@@ -60,8 +60,9 @@ func Run(ctx context.Context, config *config.Config, logger *logger.Logger) {
 	// ArtNetパケットをWebSocketに転送する処理を開始
 	go artNetUseCase.StartPacketForwarding(ctx, artNetServer)
 
-	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS)
-	router := router.NewRouter(staticHandler, timeHandler, wsHandler)
+	staticHandler := httpHandler.NewStaticHandler(indexHtml, assetsSubFS, logger)
+	httpTimeout := time.Duration(config.App.HTTPTimeoutSeconds) * time.Second
+	router := router.NewRouter(staticHandler, timeHandler, wsHandler, logger, httpTimeout)
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", config.App.Port),

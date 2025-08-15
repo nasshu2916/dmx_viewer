@@ -14,8 +14,9 @@ type (
 	}
 
 	App struct {
-		Port     string `env:"HTTP_PORT" envDefault:"8080"`
-		LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
+		Port               string `env:"HTTP_PORT" envDefault:"8080"`
+		LogLevel           string `env:"LOG_LEVEL" envDefault:"info"`
+		HTTPTimeoutSeconds int    `env:"HTTP_TIMEOUT_SECONDS" envDefault:"30"`
 	}
 
 	ArtNet struct {
