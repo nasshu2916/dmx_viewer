@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"time"
 
 	"github.com/jsimonetti/go-artnet/packet"
 	"github.com/nasshu2916/dmx_viewer/internal/domain/model"
@@ -42,9 +41,6 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 
 	uc.logger.Info("Started ArtNet packet forwarding to WebSocket")
 
-	// パフォーマンス監視用のゴルーチンを開始
-	go uc.monitorPerformance(ctx)
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -70,25 +66,6 @@ func (uc *ArtNetBridgeUseCaseImpl) StartPacketForwarding(ctx context.Context, ar
 
 			// パケットを非同期でハンドラーに渡して処理
 			uc.packetHandler.HandlePacketAsync(ctx, packet)
-		}
-	}
-}
-
-// パフォーマンスを監視する
-func (uc *ArtNetBridgeUseCaseImpl) monitorPerformance(ctx context.Context) {
-	ticker := time.NewTicker(30 * time.Second) // 30秒間隔でモニタリング
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			activeGoroutines := uc.packetHandler.GetActiveGoroutines()
-			if activeGoroutines > 0 {
-				uc.logger.Info("ArtNet packet processing performance",
-					"activeGoroutines", activeGoroutines)
-			}
 		}
 	}
 }
