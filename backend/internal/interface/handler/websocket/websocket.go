@@ -31,7 +31,7 @@ func NewWebSocketHandler(hub *Hub, logger *logger.Logger) *WebSocketHandler {
 func (h *WebSocketHandler) ServeWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		h.logger.Error("Failed to upgrade WebSocket connection: %v", err)
+		h.logger.Error("Failed to upgrade WebSocket connection", "error", err)
 		return
 	}
 
