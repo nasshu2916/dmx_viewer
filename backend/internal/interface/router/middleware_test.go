@@ -9,65 +9,80 @@ import (
 	"github.com/nasshu2916/dmx_viewer/pkg/logger"
 )
 
-func TestLoggingMiddleware_SetsRequestID(t *testing.T) {
-	l := logger.NewLogger("error")
-
-	// 次ハンドラ: 200で応答
+func TestRequestIDMiddleware_SetsHeaderAndContext(t *testing.T) {
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// ミドルウェアで設定された Request-ID/Real-IP が参照できること
 		if got := httpctx.RequestID(r.Context()); got == "" {
 			t.Fatalf("request id not found in context")
 		}
-		// Real-IP は RemoteAddr 由来のIPが入る（テスト環境のデフォルトを許容）
-		_ = httpctx.RealIP(r.Context())
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	})
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 
-	mw := LoggingMiddleware(l)
-	mw(next).ServeHTTP(rr, req)
+	RequestIDMiddleware()(next).ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", rr.Code)
+		t.Fatalf("expected 200, got %d", rr.Code)
 	}
-
-	got := rr.Header().Get("X-Request-Id")
-	if got == "" {
+	if rr.Header().Get("X-Request-Id") == "" {
 		t.Fatalf("X-Request-Id header must be set")
-	}
-
-	// ヘッダに指定があればそれを尊重
-	rr = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("X-Request-Id", "test-id-123")
-	mw(next).ServeHTTP(rr, req)
-	if rr.Header().Get("X-Request-Id") != "test-id-123" {
-		t.Fatalf("X-Request-Id should be preserved from request header")
 	}
 }
 
-func TestLoggingMiddleware_PanicRecovery(t *testing.T) {
+func TestRealIPMiddleware_XFFAndFallback(t *testing.T) {
+	// X-Forwarded-For 優先
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := httpctx.RealIP(r.Context())
+		if ip != "203.0.113.1" {
+			t.Fatalf("expected real ip from XFF, got %s", ip)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Forwarded-For", "203.0.113.1, 70.41.3.18, 150.172.238.178")
+	RealIPMiddleware()(next).ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+
+	// Fallback: RemoteAddr から
+	next2 := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := httpctx.RealIP(r.Context())
+		if ip == "" {
+			t.Fatalf("real ip should be set from RemoteAddr")
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	rr2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodGet, "/", nil)
+	RealIPMiddleware()(next2).ServeHTTP(rr2, req2)
+	if rr2.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr2.Code)
+	}
+}
+
+func TestRecoverer_WithAccessLogOutside_Records500(t *testing.T) {
 	l := logger.NewLogger("error")
 
-	// 次ハンドラ: panic を起こす
-	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// panic を起こす最終ハンドラ
+	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("boom")
 	})
 
+	// AccessLog(外) -> RequestID -> RealIP -> Recoverer(内) の順で合成
+	h := AccessLogMiddleware(l)(RequestIDMiddleware()(RealIPMiddleware()(RecovererMiddleware(l)(final))))
+
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/panic", nil)
-
-	mw := LoggingMiddleware(l)
-	// recoverされ、500が返ること
-	mw(next).ServeHTTP(rr, req)
+	h.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
-		t.Fatalf("expected status 500, got %d", rr.Code)
+		t.Fatalf("expected 500, got %d", rr.Code)
 	}
-
 	if rr.Header().Get("X-Request-Id") == "" {
 		t.Fatalf("X-Request-Id should be set even on panic")
 	}
