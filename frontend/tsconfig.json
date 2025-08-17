@@ -1,5 +1,13 @@
 {
-  "include": ["src/**/*", "src/**/*.tsx", "src/types/**/*.d.ts", "css/**/*", "env.d.ts"],
+  "include": [
+    "src/**/*",
+    "src/**/*.tsx",
+    "src/types/**/*.d.ts",
+    "css/**/*",
+    "env.d.ts",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ],
   "exclude": ["node_modules", "../priv/static"],
   "compilerOptions": {
     "strict": true,

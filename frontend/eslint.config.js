@@ -57,6 +57,12 @@ export default [
         CustomEvent: 'readonly',
         EventListener: 'readonly',
         HTMLSelectElement: 'readonly',
+        describe: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        vi: 'readonly',
       },
     },
     settings: {
