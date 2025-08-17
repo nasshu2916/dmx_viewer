@@ -24,8 +24,13 @@ func TestReceivedPacketCounters_TotalAndLastMinute(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		s.recordPacketAt(now)
 	}
-	assert.Equal(t, int64(10), s.GetReceivedPacketsTotal())
-	assert.Equal(t, int64(10), s.GetReceivedPacketsLastMinute())
+	// 1秒前に11件追加
+	for i := 0; i < 11; i++ {
+		s.recordPacketAt(now.Add(-1 * time.Second))
+	}
+	assert.Equal(t, int64(21), s.GetReceivedPacketsTotal())
+	assert.Equal(t, int64(21), s.GetReceivedPacketsLastMinute())
+	assert.Equal(t, int64(11), s.GetReceivedPacketsLastSecond())
 
 	// 61秒前のバケットに5件追加（直近60秒からは除外される）
 	past := now.Add(-61 * time.Second)
@@ -33,8 +38,10 @@ func TestReceivedPacketCounters_TotalAndLastMinute(t *testing.T) {
 		s.recordPacketAt(past)
 	}
 	// totalは加算、last minuteは変化なし
-	assert.Equal(t, int64(15), s.GetReceivedPacketsTotal())
+	assert.Equal(t, int64(26), s.GetReceivedPacketsTotal())
 	assert.Equal(t, int64(10), s.GetReceivedPacketsLastMinute())
+	// last second は現在秒-1を参照するので0
+	assert.Equal(t, int64(0), s.GetReceivedPacketsLastSecond())
 }
 
 func TestReceivedPacketCounters_RollingWindowReset(t *testing.T) {
@@ -53,4 +60,5 @@ func TestReceivedPacketCounters_RollingWindowReset(t *testing.T) {
 	// 直近60秒の合計は現在の1件のみ（古い分は除外）
 	assert.Equal(t, int64(8), s.GetReceivedPacketsTotal())
 	assert.Equal(t, int64(1), s.GetReceivedPacketsLastMinute())
+	assert.Equal(t, int64(0), s.GetReceivedPacketsLastSecond())
 }

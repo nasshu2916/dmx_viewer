@@ -132,3 +132,14 @@ func (s *Server) GetReceivedPacketsLastMinute() int64 {
 
 // RecordPacketAtForTest テスト用ヘルパー（他パッケージのテストから呼べるよう公開）
 func (s *Server) RecordPacketAtForTest(t time.Time) { s.recordPacketAt(t) }
+
+// GetReceivedPacketsLastSecond は現在の秒に受信したパケット数を返す
+func (s *Server) GetReceivedPacketsLastSecond() int64 {
+	prevSec := time.Now().Unix() - 1
+	idx := prevSec % 60
+	sec := atomic.LoadInt64(&s.packetsReceivedBucketSec[idx])
+	if sec != prevSec {
+		return 0
+	}
+	return atomic.LoadInt64(&s.packetsReceivedBuckets[idx])
+}

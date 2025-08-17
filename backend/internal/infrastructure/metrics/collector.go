@@ -22,6 +22,7 @@ type ArtNetMetricsCollector struct {
 
 	recvTotalDesc      *prometheus.Desc
 	recvLastMinuteDesc *prometheus.Desc
+	recvLastSecondDesc *prometheus.Desc
 }
 
 func NewArtNetMetricsCollector(server *artnet.Server) *ArtNetMetricsCollector {
@@ -82,6 +83,11 @@ func NewArtNetMetricsCollector(server *artnet.Server) *ArtNetMetricsCollector {
 			"Number of ArtNet packets received in the last minute (rolling 60s)",
 			nil, nil,
 		),
+		recvLastSecondDesc: prometheus.NewDesc(
+			"dmx_artnet_received_packets_last_second",
+			"Number of ArtNet packets received in the current second",
+			nil, nil,
+		),
 	}
 }
 
@@ -97,6 +103,7 @@ func (c *ArtNetMetricsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.overallHealthyDesc
 	ch <- c.recvTotalDesc
 	ch <- c.recvLastMinuteDesc
+	ch <- c.recvLastSecondDesc
 }
 
 func (c *ArtNetMetricsCollector) Collect(ch chan<- prometheus.Metric) {
@@ -105,6 +112,7 @@ func (c *ArtNetMetricsCollector) Collect(ch chan<- prometheus.Metric) {
 	healthy, _ := c.server.IsChannelHealthy()
 	recvTotal := c.server.GetReceivedPacketsTotal()
 	recvLastMinute := c.server.GetReceivedPacketsLastMinute()
+	recvLastSecond := c.server.GetReceivedPacketsLastSecond()
 
 	healthValue := 0.0
 	if recvUtil > 90.0 || sendUtil > 90.0 || droppedRecv > 0 || droppedSend > 0 {
@@ -128,6 +136,7 @@ func (c *ArtNetMetricsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(c.recvTotalDesc, prometheus.CounterValue, float64(recvTotal))
 	ch <- prometheus.MustNewConstMetric(c.recvLastMinuteDesc, prometheus.GaugeValue, float64(recvLastMinute))
+	ch <- prometheus.MustNewConstMetric(c.recvLastSecondDesc, prometheus.GaugeValue, float64(recvLastSecond))
 }
 
 // BuildRegistry は専用の Registry を作成し、標準 Collector と ArtNet Collector を登録して返す
