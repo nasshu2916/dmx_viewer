@@ -25,8 +25,6 @@ type ArtNetPacketHandler interface {
 	HandlePacket(packet model.ReceivedArtPacket) error
 	// ArtNetパケットを非同期で処理する
 	HandlePacketAsync(ctx context.Context, packet model.ReceivedArtPacket)
-	// 処理中のゴルーチン数を取得
-	GetActiveGoroutines() int
 	// ArtNetパケットを送信する
 	SendPacket(artNetPacket packet.ArtNetPacket, addr net.Addr) error
 	// ArtNetパケットをブロードキャストする
@@ -233,11 +231,6 @@ func (h *ArtNetPacketHandlerImpl) HandlePacketAsync(ctx context.Context, receive
 			}
 		}
 	}()
-}
-
-// GetActiveGoroutines 処理中のゴルーチン数を取得
-func (h *ArtNetPacketHandlerImpl) GetActiveGoroutines() int {
-	return int(atomic.LoadInt32(&h.activeGoroutines))
 }
 
 // SendPacket ArtNetパケットを指定されたアドレスに送信する

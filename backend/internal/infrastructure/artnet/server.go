@@ -28,6 +28,11 @@ type Server struct {
 	channelBufferSize  int                     // チャネルのバッファサイズ
 	droppedPackets     int64                   // ドロップされたパケット数
 	droppedSendPackets int64                   // ドロップされた送信パケット数
+
+	// 受信メトリクス
+	packetsReceivedTotal     int64     // 総受信パケット数
+	packetsReceivedBuckets   [60]int64 // 各秒の受信パケット数（リングバッファ）
+	packetsReceivedBucketSec [60]int64 // 各バケットが表すUNIX秒
 }
 
 func NewServer(logger *logger.Logger, cfg *config.ArtNet) *Server {
@@ -95,6 +100,12 @@ func (s *Server) Run() error {
 
 	<-s.done
 	return nil
+}
+
+// IsRunning returns true if the UDP listener is established.
+// It can be used as a readiness signal for HTTP readiness checks.
+func (s *Server) IsRunning() bool {
+	return s.conn != nil
 }
 
 func (s *Server) SendToWriteChan(data []byte, addr net.Addr) error {
