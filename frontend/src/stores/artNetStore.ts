@@ -44,10 +44,14 @@ export const useArtNetStore = create<ArtNetStore>(set => ({
   addServerMessage: message => {
     set(state => {
       const prevMessages = state.serverMessages
+      const MAX_SERVER_MESSAGES = 200
       if (prevMessages.length > 0 && prevMessages[prevMessages.length - 1].Timestamp === message.Timestamp) {
         return { serverMessages: prevMessages }
       }
-      return { serverMessages: [...prevMessages, message] }
+      const appended = [...prevMessages, message]
+      const sliced =
+        appended.length > MAX_SERVER_MESSAGES ? appended.slice(appended.length - MAX_SERVER_MESSAGES) : appended
+      return { serverMessages: sliced }
     })
   },
 
