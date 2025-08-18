@@ -7,14 +7,14 @@ interface TimeDisplayProps {
 
 const TimeDisplay: React.FC<TimeDisplayProps> = React.memo(({ formatTime, onReload }) => {
   return (
-    <div className="flex items-center space-x-2 p-2 text-dmx-text-light">
-      <span className="m-0 text-lg">{formatTime}</span>
+    <div className="flex items-center space-x-1 text-dmx-text-light">
+      <span className="m-0 text-xs md:text-sm leading-none">{formatTime}</span>
       <button
-        className="flex cursor-pointer rounded bg-transparent p-2 text-dmx-text-light hover:bg-white/10"
+        className="flex cursor-pointer rounded bg-transparent p-1 text-dmx-text-light hover:bg-white/10"
         onClick={onReload}
       >
         <svg
-          className="lucide lucide-rotate-cw h-4 w-4"
+          className="lucide lucide-rotate-cw h-3 w-3 md:h-4 md:w-4"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
