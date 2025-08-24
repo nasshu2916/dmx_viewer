@@ -9,9 +9,9 @@ const WebSocketStatusIndicator: React.FC<WebSocketStatusIndicatorProps> = React.
   const statusText = isConnected ? 'Connected' : 'Disconnected'
 
   return (
-    <div className="flex items-center space-x-2">
-      <span className={`h-3 w-3 rounded-full ${statusColor}`} />
-      <span className="text-sm text-dmx-text-gray">{`WebSocket: ${statusText}`}</span>
+    <div className="flex items-center space-x-1">
+      <span className={`h-2 w-2 md:h-3 md:w-3 rounded-full ${statusColor}`} />
+      <span className="text-xs md:text-sm leading-none text-dmx-text-gray">{`WebSocket: ${statusText}`}</span>
     </div>
   )
 })
